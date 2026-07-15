@@ -18,6 +18,7 @@ export default {
         display: ['"Special Elite"', 'cursive', 'monospace'],
         sans: ['"Courier Prime"', 'monospace'],
         mono: ['"Courier Prime"', 'monospace'],
+        cutive: ['"Cutive Mono"', 'monospace'],
       },
     },
   },

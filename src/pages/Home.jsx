@@ -46,7 +46,6 @@ export default function Home() {
   return (
     <main>
       <Container>
-        {/* Sits above the bio now, still centered. */}
         <div className="pt-16 pb-8 flex justify-center">
           <Link
             to="/library"
@@ -62,7 +61,7 @@ export default function Home() {
           <h2 className="font-mono text-2xl text-ink mb-2 text-left">
             Our Mission
           </h2>
-          <p className="max-w-2xl text-left text-ink/80 leading-relaxed">
+          <p className="font-cutive max-w-2xl text-left text-ink/80 leading-relaxed">
             The San Ysidro Archive serves as a living repository for the
             countercultural histories of 92173. By documenting local
             activism, joy, and resilience, the archive curates a
@@ -70,9 +69,9 @@ export default function Home() {
           </p>
 
           <h2 className="font-mono text-2xl text-ink mt-6 mb-2 max-w-2xl ml-auto text-right">
-            Nuestra Mission
+            Nuestra Misión
           </h2>
-          <p className="max-w-2xl ml-auto text-right text-ink/80 leading-relaxed">
+          <p className="font-cutive max-w-2xl ml-auto text-right text-ink/80 leading-relaxed">
             El Archivo de San Ysidro es un repositorio de las historias
             contraculturales del área 92173. Al documentar el activismo,
             la alegría y la resiliencia de San Ysidro, el archivo
@@ -98,6 +97,22 @@ export default function Home() {
             </div>
           </section>
         )}
+
+        <section className="pb-24 border-t border-rule pt-16 text-center">
+          <h2 className="font-mono text-2xl text-ink mb-3">
+            Have something to share?
+          </h2>
+          <p className="font-cutive max-w-xl mx-auto text-ink/80 leading-relaxed mb-6">
+            Photos, videos, documents, or objects — if it tells a piece of
+            San Ysidro's story, the archive wants it.
+          </p>
+          <Link
+            to="/contact"
+            className="inline-block font-mono text-xs uppercase tracking-widest border border-ink px-6 py-3 hover:bg-ink hover:text-paper transition-colors"
+          >
+            Submit to the Archive
+          </Link>
+        </section>
       </Container>
     </main>
   )

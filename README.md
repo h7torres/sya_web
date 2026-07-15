@@ -1,6 +1,6 @@
 # San Ysidro Archive
 
-website is wip
+website is wip. 
 
 ## Getting started
 

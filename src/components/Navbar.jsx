@@ -7,7 +7,7 @@ const links = [
   { to: '/collections', label: 'Collections' },
   { to: '/gallery', label: 'Gallery' },
   { to: '/neighbors', label: 'Neighbors' },
-  { to: '/contact', label: 'Contact' },
+  { to: '/contact', label: 'Submit' },
 ]
 
 export default function Navbar() {
@@ -24,6 +24,7 @@ export default function Navbar() {
                 <NavLink
                   to={link.to}
                   className={({ isActive }) =>
+                    // uses cutive font for nav bar buttons 
                     `font-mono text-xs uppercase tracking-widest pb-1 border-b ${
                       isActive
                         ? 'text-ink border-clay'

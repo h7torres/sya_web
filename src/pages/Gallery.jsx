@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
+import { useSearchParams, Link } from 'react-router-dom'
 import Container from '../components/Container.jsx'
 import Lightbox from '../components/Lightbox.jsx'
 import captions from '../data/gallery/captions.js'
+import groupMeta from '../data/gallery/groups.js'
 
-// Recursive — picks up images directly in gallery/ AND images nested
-// in themed subfolders (like sy-trolley-development-1980s/01-page.jpg).
 const imageModules = import.meta.glob('../assets/gallery/**/*.{jpg,jpeg,png,webp}', {
   eager: true,
 })
@@ -14,29 +14,65 @@ function titleCase(str) {
   return spaced.charAt(0).toUpperCase() + spaced.slice(1)
 }
 
-const galleryImages = Object.entries(imageModules).map(([path, mod], index) => {
+const allGalleryImages = Object.entries(imageModules).map(([path, mod], index) => {
   const relPath = path.split('gallery/')[1]
   const key = relPath.replace(/\.(jpg|jpeg|png|webp)$/i, '')
   const parts = relPath.split('/')
   const filename = parts[parts.length - 1].replace(/\.(jpg|jpeg|png|webp)$/i, '')
   const folderName = parts.length > 1 ? parts[0] : null
 
-  const hasCaption = Object.prototype.hasOwnProperty.call(captions, key)
+  const rawEntry = Object.prototype.hasOwnProperty.call(captions, key)
+    ? captions[key]
+    : null
   const fallback = folderName ? titleCase(folderName) : titleCase(filename)
+
+  let caption = fallback
+  let photographer = null
+  if (typeof rawEntry === 'string') {
+    caption = rawEntry
+  } else if (rawEntry && typeof rawEntry === 'object') {
+    caption = rawEntry.caption || fallback
+    photographer = rawEntry.photographer || null
+  }
 
   return {
     id: index,
+    key,
     src: mod.default,
-    caption: hasCaption ? captions[key] : fallback,
-    // Images sharing a subfolder share a "group" — the lightbox uses
-    // this to know which photos count as "the rest" to browse through.
-    // Standalone images (no subfolder) get their own group of one.
+    caption,
+    photographer,
     group: folderName || `standalone-${index}`,
+    groupTitle: folderName ? groupMeta[folderName] || titleCase(folderName) : null,
   }
 })
 
+// Fisher-Yates shuffle — same approach used on Home's Featured section.
+function shuffle(array) {
+  const result = [...array]
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[result[i], result[j]] = [result[j], result[i]]
+  }
+  return result
+}
+
 export default function Gallery() {
+  // Shuffled once per page load/visit, not on every re-render —
+  // otherwise clicking an image open/closed would reshuffle the grid
+  // underneath the lightbox.
+  const galleryImages = useMemo(() => shuffle(allGalleryImages), [])
+
   const [activeIndex, setActiveIndex] = useState(null)
+  const [searchParams] = useSearchParams()
+
+  useEffect(() => {
+    const targetKey = searchParams.get('image')
+    if (!targetKey) return
+    const index = galleryImages.findIndex((img) => img.key === targetKey)
+    if (index !== -1) {
+      setActiveIndex(index)
+    }
+  }, [searchParams, galleryImages])
 
   const activeImage = activeIndex !== null ? galleryImages[activeIndex] : null
   const siblings = activeImage
@@ -58,9 +94,7 @@ export default function Gallery() {
       <Container>
         <div className="py-16">
           <h1 className="font-mono text-2xl text-ink mb-2">Gallery</h1>
-          <p className="font-cutive text-ink/70 mb-10">
-            Every photograph in the archive, gathered in one place.
-          </p>
+          
 
           {galleryImages.length === 0 ? (
             <p className="font-cutive text-ink/60">
@@ -79,7 +113,7 @@ export default function Gallery() {
                     alt={img.caption}
                     className="w-full rounded-sm"
                   />
-                  <p className="font-mono text-xs text-ink/60 mt-2">
+                  <p className="font-mono text-xs text-ink/60 mt-2 text-center">
                     {img.caption}
                   </p>
                 </button>
@@ -87,6 +121,22 @@ export default function Gallery() {
             </div>
           )}
         </div>
+
+        <section className="pb-24 border-t border-rule pt-16 text-center">
+          <h2 className="font-mono text-2xl text-ink mb-3">
+            Have something to share?
+          </h2>
+          <p className="font-cutive max-w-xl mx-auto text-ink/80 leading-relaxed mb-6">
+            Photos, videos, documents, or objects — if it tells a piece of
+            San Ysidro's story, the archive would love to see it!
+          </p>
+          <Link
+            to="/contact"
+            className="inline-block font-mono text-xs uppercase tracking-widest border border-ink px-6 py-3 rounded-full hover:bg-ink hover:text-paper transition-colors"
+          >
+            Submit to the Archive
+          </Link>
+        </section>
       </Container>
 
       <Lightbox
@@ -94,6 +144,7 @@ export default function Gallery() {
         activeIndex={siblingPosition}
         onClose={() => setActiveIndex(null)}
         onNavigate={handleNavigate}
+        groupTitle={activeImage?.groupTitle}
       />
     </main>
   )

@@ -1,36 +1,35 @@
-import { useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import Container from '../components/Container.jsx'
+import captions from '../data/gallery/captions.js'
 
-// import.meta.glob scans a folder at build time and imports every
-// matching file automatically — so dropping a new photo into
-// src/assets/gallery/ is enough to make it eligible for Featured,
-// with no manual list to update.
-// eager: true means the images are imported immediately (rather than
-// lazily, which would require await and is meant for code-splitting
-// large apps — unnecessary for a handful of images).
-const imageModules = import.meta.glob('../assets/gallery/*.{jpg,jpeg,png,webp}', {
+const imageModules = import.meta.glob('../assets/gallery/**/*.{jpg,jpeg,png,webp}', {
   eager: true,
 })
 
-// Each entry's key is the file path (e.g. '../assets/gallery/beyer-blvd-78.jpg')
-// and its value is the module, whose .default is the actual usable image
-// path/URL. We also turn the filename into a rough alt text as a fallback —
-// replacing dashes/underscores with spaces and capitalizing — until real
-// captions exist per-image (at that point this could switch to reading
-// from src/data/gallery/*.js instead, matched by filename).
+function titleCase(str) {
+  const spaced = str.replace(/[-_]/g, ' ')
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1)
+}
+
 const featuredImages = Object.entries(imageModules).map(([path, mod], index) => {
-  const filename = path.split('/').pop().replace(/\.(jpg|jpeg|png|webp)$/i, '')
-  const altGuess = filename.replace(/[-_]/g, ' ')
+  const relPath = path.split('gallery/')[1]
+  const key = relPath.replace(/\.(jpg|jpeg|png|webp)$/i, '')
+  const parts = relPath.split('/')
+  const filename = parts[parts.length - 1].replace(/\.(jpg|jpeg|png|webp)$/i, '')
+  const folderName = parts.length > 1 ? parts[0] : null
+
+  const hasCaption = Object.prototype.hasOwnProperty.call(captions, key)
+  const fallback = folderName ? titleCase(folderName) : titleCase(filename)
+
   return {
     id: index,
+    key,
     src: mod.default,
-    alt: altGuess.charAt(0).toUpperCase() + altGuess.slice(1),
+    caption: hasCaption ? captions[key] : fallback,
   }
 })
 
-// Fisher-Yates shuffle — picks a random remaining item for each slot,
-// swapping as it goes, so every ordering is equally likely.
 function shuffle(array) {
   const result = [...array]
   for (let i = result.length - 1; i > 0; i--) {
@@ -40,22 +39,60 @@ function shuffle(array) {
   return result
 }
 
+// Roughly how many "average" images Featured should show. Not a hard
+// count — a few unusually tall photos will eat more of this budget
+// each, so the actual number displayed can be less than 9 if the
+// shuffle happens to pick several tall ones.
+const TARGET_WEIGHT = 9
+
 export default function Home() {
-  const shuffledImages = useMemo(() => shuffle(featuredImages), [])
+  const shuffledCandidates = useMemo(() => shuffle(featuredImages), [])
+  const [displayedImages, setDisplayedImages] = useState([])
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadAndSelect() {
+      const withWeights = await Promise.all(
+        shuffledCandidates.map(
+          (img) =>
+            new Promise((resolve) => {
+              const el = new Image()
+              el.onload = () => {
+                const aspect = el.naturalHeight / el.naturalWidth
+                const weight = Math.min(Math.max(aspect, 0.6), 2.5)
+                resolve({ ...img, weight })
+              }
+              el.onerror = () => resolve({ ...img, weight: 1 })
+              el.src = img.src
+            })
+        )
+      )
+
+      let runningWeight = 0
+      const selected = []
+      for (const img of withWeights) {
+        if (runningWeight >= TARGET_WEIGHT) break
+        selected.push(img)
+        runningWeight += img.weight
+      }
+
+      if (!cancelled) setDisplayedImages(selected)
+    }
+
+    if (shuffledCandidates.length > 0) {
+      loadAndSelect()
+    }
+
+    return () => {
+      cancelled = true
+    }
+  }, [shuffledCandidates])
 
   return (
     <main>
       <Container>
-        <div className="pt-16 pb-8 flex justify-center">
-          <Link
-            to="/library"
-            className="font-mono text-xs uppercase tracking-widest border border-ink px-6 py-3 hover:bg-ink hover:text-paper transition-colors"
-          >
-            Explore the Archive
-          </Link>
-        </div>
-
-        <div className="pb-16">
+        <div className="pt-16 pb-16">
           <h1 className="sr-only">San Ysidro Archive</h1>
 
           <h2 className="font-mono text-2xl text-ink mb-2 text-left">
@@ -80,19 +117,34 @@ export default function Home() {
           </p>
         </div>
 
-        {shuffledImages.length > 0 && (
+        <div className="pb-16 flex justify-center">
+          <Link
+            to="/library"
+            className="font-mono text-xs uppercase tracking-widest border border-ink px-6 py-3 rounded-full hover:bg-ink hover:text-paper transition-colors"
+          >
+            Explore the Archive
+          </Link>
+        </div>
+
+        {displayedImages.length > 0 && (
           <section className="pb-24">
             <h2 className="font-mono text-xs uppercase tracking-widest text-stamp mb-6">
               Featured
             </h2>
             <div className="columns-2 md:columns-3 gap-4">
-              {shuffledImages.map((img) => (
-                <img
+              {displayedImages.map((img) => (
+                <Link
                   key={img.id}
-                  src={img.src}
-                  alt={img.alt}
-                  className="w-full mb-4 break-inside-avoid rounded-sm"
-                />
+                  to={`/gallery?image=${encodeURIComponent(img.key)}`}
+                  className="relative block w-full mb-4 break-inside-avoid group overflow-hidden rounded-sm"
+                >
+                  <img src={img.src} alt={img.caption} className="w-full block" />
+                  <div className="absolute inset-0 bg-ink/0 group-hover:bg-ink/60 transition-colors duration-200 flex items-center justify-center">
+                    <p className="font-mono text-xs text-paper text-center px-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      {img.caption}
+                    </p>
+                  </div>
+                </Link>
               ))}
             </div>
           </section>
@@ -104,11 +156,11 @@ export default function Home() {
           </h2>
           <p className="font-cutive max-w-xl mx-auto text-ink/80 leading-relaxed mb-6">
             Photos, videos, documents, or objects — if it tells a piece of
-            San Ysidro's story, the archive wants it.
+            San Ysidro's story, the archive would love to see it!
           </p>
           <Link
             to="/contact"
-            className="inline-block font-mono text-xs uppercase tracking-widest border border-ink px-6 py-3 hover:bg-ink hover:text-paper transition-colors"
+            className="inline-block font-mono text-xs uppercase tracking-widest border border-ink px-6 py-3 rounded-full hover:bg-ink hover:text-paper transition-colors"
           >
             Submit to the Archive
           </Link>

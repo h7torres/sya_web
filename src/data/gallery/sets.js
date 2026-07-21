@@ -9,22 +9,27 @@ const setMeta = {
   'changing-sy-vol1-issue3': {
     title: 'Changing San Ysidro — Vol. 1, Issue 3',
     tags: ['Changing San Ysidro'],
+    type: 'document',
   },
   'changing-sy-vol1-iss4': {
     title: 'Changing San Ysidro — Vol. 1, Issue 4',
     tags: ['Changing San Ysidro'],
+    type: 'document',
   },
   'changing-sy-vol2-iss1': {
     title: 'Changing San Ysidro — Vol. 2, Issue 1',
     tags: ['Changing San Ysidro'],
+    type: 'document',
   },
   'changing-sy-vol2-iss2': {
     title: 'Changing San Ysidro — Vol. 2, Issue 2',
     tags: ['Changing San Ysidro'],
+    type: 'document',
   },
   'changing-sy-vol2-iss3': {
     title: 'Changing San Ysidro — Vol. 2, Issue 3',
     tags: ['Changing San Ysidro'],
+    type: 'document',
   },
   'cultures-blend': {
     title: 'Mexican-American Cultures Blend at San Ysidro',
@@ -51,6 +56,17 @@ const setMeta = {
   'sy-library-reopening': {
     title: 'San Ysidro Branch Library Grand Re-Opening, 1984',
     tags: ['Education', 'Community Celebrations'],
+  },
+
+  'trolley-dev-80s': {
+    title: 'Trolley Development, 1980s',
+    tags: ['Urban Development'],
+    type: 'collection',
+  },
+  'trolley-dev-90s': {
+    title: 'Trolley Development, 1990s',
+    tags: ['Urban Development'],
+    type: 'collection',
   },
 }
 

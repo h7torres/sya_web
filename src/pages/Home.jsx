@@ -2,51 +2,11 @@ import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import Container from '../components/Container.jsx'
 import NeighborAvatar from '../components/NeighborAvatar.jsx'
-import captions from '../data/gallery/captions.js'
-import groupMeta from '../data/gallery/groups.js'
-import { imageSets } from '../data/gallery/index.js'
+import Lightbox from '../components/Lightbox.jsx'
+import { flatImages, setCovers, allItems, getDocumentPages } from '../data/gallery/loadGallery.js'
 import neighbors from '../data/neighbors/index.js'
 
-const imageModules = import.meta.glob('../assets/gallery/**/*.{jpg,jpeg,png,webp}', {
-  eager: true,
-})
-
-function titleCase(str) {
-  const spaced = str.replace(/[-_]/g, ' ')
-  return spaced.charAt(0).toUpperCase() + spaced.slice(1)
-}
-
-const individualPhotos = Object.entries(imageModules).map(([path, mod], index) => {
-  const relPath = path.split('gallery/')[1]
-  const key = relPath.replace(/\.(jpg|jpeg|png|webp)$/i, '')
-  const parts = relPath.split('/')
-  const filename = parts[parts.length - 1].replace(/\.(jpg|jpeg|png|webp)$/i, '')
-  const folderName = parts.length > 1 ? parts[0] : null
-
-  const rawEntry = Object.prototype.hasOwnProperty.call(captions, key)
-    ? captions[key]
-    : null
-  const fallback = folderName
-    ? groupMeta[folderName] || titleCase(folderName)
-    : titleCase(filename)
-  const caption =
-    typeof rawEntry === 'string'
-      ? rawEntry
-      : rawEntry && typeof rawEntry === 'object'
-      ? rawEntry.caption || fallback
-      : fallback
-
-  return { id: `photo-${index}`, key, src: mod.default, caption }
-})
-
-const setCoverCandidates = imageSets.map((set) => ({
-  id: `set-${set.slug}`,
-  key: `set-${set.slug}`,
-  src: set.cover,
-  caption: set.title,
-}))
-
-const featuredCandidates = [...individualPhotos, ...setCoverCandidates]
+const featuredCandidates = [...flatImages, ...setCovers]
 
 function shuffle(array) {
   const result = [...array]
@@ -58,11 +18,13 @@ function shuffle(array) {
 }
 
 const TARGET_WEIGHT = 9
-const NEIGHBOR_PREVIEW_COUNT = 3
+const NEIGHBOR_PREVIEW_COUNT = 4
 
 export default function Home() {
   const shuffledCandidates = useMemo(() => shuffle(featuredCandidates), [])
   const [displayedImages, setDisplayedImages] = useState([])
+  const [activeGroup, setActiveGroup] = useState(null)
+  const [activePosition, setActivePosition] = useState(0)
 
   const featuredNeighbors = useMemo(
     () => shuffle(neighbors).slice(0, NEIGHBOR_PREVIEW_COUNT),
@@ -109,6 +71,44 @@ export default function Home() {
     }
   }, [shuffledCandidates])
 
+  function openItem(item) {
+    setActiveGroup(item.group)
+    if (item.isSet) {
+      setActivePosition(0)
+    } else {
+      const groupPhotos = flatImages.filter((img) => img.group === item.group)
+      const pos = groupPhotos.findIndex((s) => s.id === item.id)
+      setActivePosition(pos === -1 ? 0 : pos)
+    }
+  }
+
+  const activeMeta = activeGroup
+    ? allItems.find((item) => item.group === activeGroup)
+    : null
+
+  const siblings = (() => {
+    if (!activeGroup) return []
+    if (activeMeta?.isSet) {
+      return getDocumentPages(activeGroup)
+    }
+    const groupPhotos = flatImages.filter((img) => img.group === activeGroup)
+    if (activeMeta?.isCollectionGroup) {
+      return [groupPhotos[activePosition]].filter(Boolean)
+    }
+    return groupPhotos
+  })()
+
+  const lightboxIndex = !activeGroup
+    ? -1
+    : activeMeta?.isCollectionGroup
+    ? 0
+    : activePosition
+
+  function handleNavigate(direction) {
+    const total = siblings.length
+    setActivePosition((prev) => (prev + direction + total) % total)
+  }
+
   return (
     <main>
       <Container>
@@ -149,14 +149,14 @@ export default function Home() {
         {displayedImages.length > 0 && (
           <section className="pb-24">
             <h2 className="font-mono text-xs uppercase tracking-widest text-stamp mb-6">
-              Featured
+              Featured Bits From The Archive 
             </h2>
             <div className="columns-2 md:columns-3 gap-4">
               {displayedImages.map((img) => (
-                <Link
+                <button
                   key={img.id}
-                  to={`/library?image=${encodeURIComponent(img.key)}`}
-                  className="relative block w-full mb-4 break-inside-avoid group overflow-hidden rounded-sm"
+                  onClick={() => openItem(img)}
+                  className="relative block w-full mb-4 break-inside-avoid group overflow-hidden rounded-sm text-left"
                 >
                   <img src={img.src} alt={img.caption} className="w-full block" />
                   <div className="absolute inset-0 bg-ink/0 group-hover:bg-ink/60 transition-colors duration-200 flex items-center justify-center">
@@ -164,15 +164,15 @@ export default function Home() {
                       {img.caption}
                     </p>
                   </div>
-                </Link>
+                </button>
               ))}
             </div>
-            <div className="mt-6 flex justify-center">
+            <div className="mt-10 flex justify-center">
               <Link
                 to="/library"
-                className="font-mono text-xs uppercase tracking-widest border border-ink px-6 py-3 rounded-full hover:bg-ink hover:text-paper transition-colors"
+                className="font-mono text-xs uppercase tracking-widest text-stamp hover:text-stamp/50 underline transition-colors"
               >
-                See All Photos
+                See More! →
               </Link>
             </div>
           </section>
@@ -180,10 +180,10 @@ export default function Home() {
 
         {featuredNeighbors.length > 0 && (
           <section className="pb-24 border-t border-rule pt-16">
-            <h2 className="font-mono text-xs uppercase tracking-widest text-stamp mb-6 text-center">
-              Neighbors
+            <h2 className="font-mono text-xs uppercase tracking-widest text-stamp mb-6">
+              Featured Neighbors
             </h2>
-            <div className="grid grid-cols-3 gap-6 max-w-xl mx-auto">
+            <div className="grid grid-cols-4 gap-6 max-w-2xl mx-auto">
               {featuredNeighbors.map((neighbor) => (
                 <Link
                   key={neighbor.id}
@@ -208,9 +208,9 @@ export default function Home() {
             <div className="mt-8 flex justify-center">
               <Link
                 to="/neighbors"
-                className="font-mono text-xs uppercase tracking-widest border border-ink px-6 py-3 rounded-full hover:bg-ink hover:text-paper transition-colors"
+                className="font-mono text-xs uppercase tracking-widest text-stamp hover:text-stamp/50 underline transition-colors"
               >
-                See All Neighbors
+                Meet All of Our Neighbors →
               </Link>
             </div>
           </section>
@@ -232,6 +232,16 @@ export default function Home() {
           </Link>
         </section>
       </Container>
+
+      <Lightbox
+        images={siblings}
+        activeIndex={lightboxIndex}
+        onClose={() => setActiveGroup(null)}
+        onNavigate={handleNavigate}
+        groupTitle={activeMeta?.groupTitle}
+        credit={activeMeta?.credit}
+        setSlug={activeMeta?.isCollectionGroup ? activeGroup : null}
+      />
     </main>
   )
 }

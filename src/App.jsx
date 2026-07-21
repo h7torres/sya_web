@@ -8,6 +8,10 @@ import Collections from './pages/Collections.jsx'
 import Neighbors from './pages/Neighbors.jsx'
 import Community from './pages/Community.jsx'
 import Contact from './pages/Contact.jsx'
+import GallerySet from './pages/GallerySet.jsx'
+
+
+
 
 export default function App() {
   return (
@@ -16,6 +20,7 @@ export default function App() {
       <Navbar />
       <div className="flex-grow">
         <Routes>
+          <Route path="/library/:slug" element={<GallerySet />} />
           <Route path="/" element={<Home />} />
           <Route path="/library" element={<Library />} />
           <Route path="/collections" element={<Collections />} />

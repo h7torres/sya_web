@@ -2,90 +2,13 @@ import { useState, useEffect, useMemo } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import Container from '../components/Container.jsx'
 import Lightbox from '../components/Lightbox.jsx'
-import captions from '../data/gallery/captions.js'
-import groupMeta from '../data/gallery/groups.js'
-import { imageSets } from '../data/gallery/index.js'
-
-const imageModules = import.meta.glob('../assets/gallery/**/*.{jpg,jpeg,png,webp}', {
-  eager: true,
-})
-
-function titleCase(str) {
-  const spaced = str.replace(/[-_]/g, ' ')
-  return spaced.charAt(0).toUpperCase() + spaced.slice(1)
-}
-
-const flatImages = Object.entries(imageModules).map(([path, mod], index) => {
-  const relPath = path.split('gallery/')[1]
-  const key = relPath.replace(/\.(jpg|jpeg|png|webp)$/i, '')
-  const parts = relPath.split('/')
-  const filename = parts[parts.length - 1].replace(/\.(jpg|jpeg|png|webp)$/i, '')
-  const folderName = parts.length > 1 ? parts[0] : null
-
-  const rawEntry = Object.prototype.hasOwnProperty.call(captions, key)
-    ? captions[key]
-    : null
-  const fallback = folderName
-    ? groupMeta[folderName] || titleCase(folderName)
-    : titleCase(filename)
-
-  let caption = fallback
-  let photographer = null
-  if (typeof rawEntry === 'string') {
-    caption = rawEntry
-  } else if (rawEntry && typeof rawEntry === 'object') {
-    caption = rawEntry.caption || fallback
-    photographer = rawEntry.photographer || null
-  }
-
-  return {
-    id: `photo-${index}`,
-    key,
-    src: mod.default,
-    caption,
-    photographer,
-    group: folderName || `standalone-${index}`,
-    groupTitle: folderName ? groupMeta[folderName] || titleCase(folderName) : null,
-    credit: null,
-    isSet: false,
-  }
-})
-
-const setCovers = imageSets.map((set) => ({
-  id: `set-${set.slug}`,
-  key: `set-${set.slug}`,
-  src: set.cover,
-  caption: set.title,
-  photographer: null,
-  group: `set-${set.slug}`,
-  groupTitle: set.title,
-  credit: set.credit,
-  isSet: true,
-  images: set.images,
-}))
-
-const allItems = [...flatImages, ...setCovers]
-
-function shuffle(array) {
-  const result = [...array]
-  for (let i = result.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[result[i], result[j]] = [result[j], result[i]]
-  }
-  return result
-}
-
-function getSiblings(groupKey) {
-  const set = setCovers.find((s) => s.group === groupKey)
-  if (set) {
-    return set.images.map((img, i) => ({
-      id: `${groupKey}-${i}`,
-      src: img.src,
-      caption: set.caption,
-    }))
-  }
-  return flatImages.filter((img) => img.group === groupKey)
-}
+import {
+  flatImages,
+  setCovers,
+  allItems,
+  shuffle,
+  getDocumentPages,
+} from '../data/gallery/loadGallery.js'
 
 export default function Library() {
   const shuffledItems = useMemo(() => shuffle(allItems), [])
@@ -99,8 +22,8 @@ export default function Library() {
 
     const targetPhoto = flatImages.find((img) => img.key === targetKey)
     if (targetPhoto) {
-      const sibs = getSiblings(targetPhoto.group)
-      const pos = sibs.findIndex((s) => s.id === targetPhoto.id)
+      const groupPhotos = flatImages.filter((img) => img.group === targetPhoto.group)
+      const pos = groupPhotos.findIndex((s) => s.id === targetPhoto.id)
       setActiveGroup(targetPhoto.group)
       setActivePosition(pos === -1 ? 0 : pos)
       return
@@ -115,19 +38,48 @@ export default function Library() {
 
   function openItem(item) {
     setActiveGroup(item.group)
+    window.history.replaceState(null, '', `?image=${item.key}`)
     if (item.isSet) {
       setActivePosition(0)
     } else {
-      const sibs = getSiblings(item.group)
-      const pos = sibs.findIndex((s) => s.id === item.id)
+      const groupPhotos = flatImages.filter((img) => img.group === item.group)
+      const pos = groupPhotos.findIndex((s) => s.id === item.id)
       setActivePosition(pos === -1 ? 0 : pos)
     }
   }
 
-  const siblings = activeGroup ? getSiblings(activeGroup) : []
+  function closeItem() {
+    setActiveGroup(null)
+    window.history.replaceState(null, '', window.location.pathname)
+  }
+
   const activeMeta = activeGroup
     ? allItems.find((item) => item.group === activeGroup)
     : null
+
+  const siblings = (() => {
+    if (!activeGroup) return []
+    if (activeMeta?.isSet) {
+      return getDocumentPages(activeGroup)
+    }
+    const groupPhotos = flatImages.filter((img) => img.group === activeGroup)
+    if (activeMeta?.isCollectionGroup) {
+      // Collections don't scroll in the lightbox — only the photo
+      // that was actually clicked shows here; the rest live on the
+      // dedicated collection page instead.
+      return [groupPhotos[activePosition]].filter(Boolean)
+    }
+    return groupPhotos
+  })()
+
+  // Decoupled from activePosition: for collections, siblings is always
+  // a 1-item array regardless of where the clicked photo sits in the
+  // full folder, so the index handed to Lightbox must always be 0.
+  const lightboxIndex = !activeGroup
+    ? -1
+    : activeMeta?.isCollectionGroup
+    ? 0
+    : activePosition
 
   function handleNavigate(direction) {
     const total = siblings.length
@@ -188,11 +140,12 @@ export default function Library() {
 
       <Lightbox
         images={siblings}
-        activeIndex={activeGroup ? activePosition : -1}
-        onClose={() => setActiveGroup(null)}
+        activeIndex={lightboxIndex}
+        onClose={closeItem}
         onNavigate={handleNavigate}
         groupTitle={activeMeta?.groupTitle}
         credit={activeMeta?.credit}
+        setSlug={activeMeta?.isCollectionGroup ? activeGroup : null}
       />
     </main>
   )

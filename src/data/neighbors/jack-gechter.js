@@ -1,7 +1,7 @@
 const neighbor = {
-  id: 'francisco-sevilla',
-  name: 'Francisco Javier Sevilla Apodaca',
-  role: 'Retired School Teacher',
+  id: 'jack-gechter',
+  name: 'Jack Gechter',
+  role: '',
   bio: '',
   photo: null,
   interview: '',

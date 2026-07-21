@@ -5,8 +5,10 @@
 // auto-formatted as a fallback, so this is optional polish, not
 // required for a group to work.
 const groupMeta = {
-  'sy-trolley-development-1980s': 'San Ysidro Trolley Development, 1980s',
-  'sy-trolley-1990s': 'San Ysidro Trolley, 1990s',
+  'trolley-dev-80s': 'San Ysidro Trolley Development, 1980s',
+  'trolley-dev-90s': 'San Ysidro Trolley, 1990s',
+  
+  
 }
 
 export default groupMeta

@@ -1,7 +1,7 @@
 const neighbor = {
-  id: 'francisco-sevilla',
-  name: 'Francisco Javier Sevilla Apodaca',
-  role: 'Retired School Teacher',
+  id: 'martha-jacobo',
+  name: 'Martha Jacobo',
+  role: 'Friends of San Ysidro Library',
   bio: '',
   photo: null,
   interview: '',

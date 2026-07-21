@@ -5,8 +5,8 @@ import logo from '../assets/sya_one_line.png'
 const links = [
   { to: '/library', label: 'Library' },
   { to: '/collections', label: 'Collections' },
-  { to: '/gallery', label: 'Gallery' },
   { to: '/neighbors', label: 'Neighbors' },
+  { to: '/community', label: 'Community' },
   { to: '/contact', label: 'Contact' },
 ]
 

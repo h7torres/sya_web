@@ -1,7 +1,7 @@
 const neighbor = {
-  id: 'francisco-sevilla',
-  name: 'Francisco Javier Sevilla Apodaca',
-  role: 'Retired School Teacher',
+  id: 'irene-barajas',
+  name: 'Irene G Barajas',
+  role: 'Founder/Leader, Girl Scouts of San Ysidro',
   bio: '',
   photo: null,
   interview: '',

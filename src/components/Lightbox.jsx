@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import neighbors from '../data/neighbors/index.js'
 
-export default function Lightbox({ images, activeIndex, onClose, onNavigate, groupTitle }) {
+export default function Lightbox({ images, activeIndex, onClose, onNavigate, groupTitle, credit }) {
   if (activeIndex === null || activeIndex === -1 || !images[activeIndex]) {
     return null
   }
@@ -18,9 +18,6 @@ export default function Lightbox({ images, activeIndex, onClose, onNavigate, gro
       className="fixed inset-0 z-50 bg-paper/70 flex items-center justify-center p-4 md:p-10"
       onClick={onClose}
     >
-      {/* Arrows now live outside the white box entirely, positioned
-          relative to the whole overlay instead of the image side, so
-          they sit clearly apart from the photo instead of overlapping it. */}
       {hasMultiple && (
         <button
           onClick={(e) => {
@@ -53,9 +50,6 @@ export default function Lightbox({ images, activeIndex, onClose, onNavigate, gro
           />
         </div>
 
-        {/* Info side — flex column with justify-center vertically
-            centers the caption block within the panel, rather than it
-            sitting pinned near the top. */}
         <div className="w-full md:w-72 py-6 px-6 border-t md:border-t-0 md:border-l border-rule overflow-y-auto flex flex-col justify-center text-center min-h-[200px]">
           <p className="font-cutive text-sm text-ink/90 leading-relaxed">
             {image.caption}
@@ -65,6 +59,10 @@ export default function Lightbox({ images, activeIndex, onClose, onNavigate, gro
             <p className="font-mono text-xs text-stamp uppercase tracking-widest mt-4">
               Part of: {groupTitle}
             </p>
+          )}
+
+          {credit && (
+            <p className="font-mono text-xs text-ink/50 mt-3">{credit}</p>
           )}
 
           {photographer && (

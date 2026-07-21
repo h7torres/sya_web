@@ -4,6 +4,7 @@ import Container from '../components/Container.jsx'
 import Lightbox from '../components/Lightbox.jsx'
 import captions from '../data/gallery/captions.js'
 import groupMeta from '../data/gallery/groups.js'
+import { imageSets } from '../data/gallery/index.js'
 
 const imageModules = import.meta.glob('../assets/gallery/**/*.{jpg,jpeg,png,webp}', {
   eager: true,
@@ -14,7 +15,7 @@ function titleCase(str) {
   return spaced.charAt(0).toUpperCase() + spaced.slice(1)
 }
 
-const allGalleryImages = Object.entries(imageModules).map(([path, mod], index) => {
+const flatImages = Object.entries(imageModules).map(([path, mod], index) => {
   const relPath = path.split('gallery/')[1]
   const key = relPath.replace(/\.(jpg|jpeg|png|webp)$/i, '')
   const parts = relPath.split('/')
@@ -24,8 +25,10 @@ const allGalleryImages = Object.entries(imageModules).map(([path, mod], index) =
   const rawEntry = Object.prototype.hasOwnProperty.call(captions, key)
     ? captions[key]
     : null
-  const fallback = folderName ? titleCase(folderName) : titleCase(filename)
-
+  const fallback = folderName
+    ? groupMeta[folderName] || titleCase(folderName)
+    : titleCase(filename)
+    
   let caption = fallback
   let photographer = null
   if (typeof rawEntry === 'string') {
@@ -36,17 +39,33 @@ const allGalleryImages = Object.entries(imageModules).map(([path, mod], index) =
   }
 
   return {
-    id: index,
+    id: `photo-${index}`,
     key,
     src: mod.default,
     caption,
     photographer,
     group: folderName || `standalone-${index}`,
     groupTitle: folderName ? groupMeta[folderName] || titleCase(folderName) : null,
+    credit: null,
+    isSet: false,
   }
 })
 
-// Fisher-Yates shuffle — same approach used on Home's Featured section.
+const setCovers = imageSets.map((set) => ({
+  id: `set-${set.slug}`,
+  key: `set-${set.slug}`,
+  src: set.cover,
+  caption: set.title,
+  photographer: null,
+  group: `set-${set.slug}`,
+  groupTitle: set.title,
+  credit: set.credit,
+  isSet: true,
+  images: set.images,
+}))
+
+const allItems = [...flatImages, ...setCovers]
+
 function shuffle(array) {
   const result = [...array]
   for (let i = result.length - 1; i > 0; i--) {
@@ -56,65 +75,91 @@ function shuffle(array) {
   return result
 }
 
-export default function Gallery() {
-  // Shuffled once per page load/visit, not on every re-render —
-  // otherwise clicking an image open/closed would reshuffle the grid
-  // underneath the lightbox.
-  const galleryImages = useMemo(() => shuffle(allGalleryImages), [])
+function getSiblings(groupKey) {
+  const set = setCovers.find((s) => s.group === groupKey)
+  if (set) {
+    return set.images.map((img, i) => ({
+      id: `${groupKey}-${i}`,
+      src: img.src,
+      caption: set.caption,
+    }))
+  }
+  return flatImages.filter((img) => img.group === groupKey)
+}
 
-  const [activeIndex, setActiveIndex] = useState(null)
+export default function Gallery() {
+  const shuffledItems = useMemo(() => shuffle(allItems), [])
+  const [activeGroup, setActiveGroup] = useState(null)
+  const [activePosition, setActivePosition] = useState(0)
   const [searchParams] = useSearchParams()
 
   useEffect(() => {
     const targetKey = searchParams.get('image')
     if (!targetKey) return
-    const index = galleryImages.findIndex((img) => img.key === targetKey)
-    if (index !== -1) {
-      setActiveIndex(index)
-    }
-  }, [searchParams, galleryImages])
 
-  const activeImage = activeIndex !== null ? galleryImages[activeIndex] : null
-  const siblings = activeImage
-    ? galleryImages.filter((img) => img.group === activeImage.group)
-    : []
-  const siblingPosition = activeImage
-    ? siblings.findIndex((img) => img.id === activeImage.id)
-    : -1
+    const targetPhoto = flatImages.find((img) => img.key === targetKey)
+    if (targetPhoto) {
+      const sibs = getSiblings(targetPhoto.group)
+      const pos = sibs.findIndex((s) => s.id === targetPhoto.id)
+      setActiveGroup(targetPhoto.group)
+      setActivePosition(pos === -1 ? 0 : pos)
+      return
+    }
+
+    const targetSet = setCovers.find((s) => s.key === targetKey)
+    if (targetSet) {
+      setActiveGroup(targetSet.group)
+      setActivePosition(0)
+    }
+  }, [searchParams])
+
+  function openItem(item) {
+    setActiveGroup(item.group)
+    if (item.isSet) {
+      setActivePosition(0)
+    } else {
+      const sibs = getSiblings(item.group)
+      const pos = sibs.findIndex((s) => s.id === item.id)
+      setActivePosition(pos === -1 ? 0 : pos)
+    }
+  }
+
+  const siblings = activeGroup ? getSiblings(activeGroup) : []
+  const activeMeta = activeGroup
+    ? allItems.find((item) => item.group === activeGroup)
+    : null
 
   function handleNavigate(direction) {
     const total = siblings.length
-    const nextPosition = (siblingPosition + direction + total) % total
-    const nextImage = siblings[nextPosition]
-    setActiveIndex(galleryImages.findIndex((img) => img.id === nextImage.id))
+    setActivePosition((prev) => (prev + direction + total) % total)
   }
 
   return (
     <main>
       <Container>
         <div className="py-16">
-          <h1 className="font-mono text-2xl text-ink mb-2">Gallery</h1>
+          <h1 className="font-mono  text-2xl text-ink mb-2">Explore the Gallery</h1>
           
 
-          {galleryImages.length === 0 ? (
+          {shuffledItems.length === 0 ? (
             <p className="font-cutive text-ink/60">
               No images yet — add some to src/assets/gallery/.
             </p>
           ) : (
-            <div className="columns-2 md:columns-3 gap-4">
-              {galleryImages.map((img, index) => (
+            <div className="columns-2 md:columns-4 gap-4">
+              {shuffledItems.map((item) => (
                 <button
-                  key={img.id}
-                  onClick={() => setActiveIndex(index)}
+                  key={item.id}
+                  onClick={() => openItem(item)}
                   className="block w-full mb-4 break-inside-avoid text-left"
                 >
                   <img
-                    src={img.src}
-                    alt={img.caption}
+                    src={item.src}
+                    alt={item.caption}
                     className="w-full rounded-sm"
                   />
                   <p className="font-mono text-xs text-ink/60 mt-2 text-center">
-                    {img.caption}
+                    {item.caption}
                   </p>
                 </button>
               ))}
@@ -141,10 +186,11 @@ export default function Gallery() {
 
       <Lightbox
         images={siblings}
-        activeIndex={siblingPosition}
-        onClose={() => setActiveIndex(null)}
+        activeIndex={activeGroup ? activePosition : -1}
+        onClose={() => setActiveGroup(null)}
         onNavigate={handleNavigate}
-        groupTitle={activeImage?.groupTitle}
+        groupTitle={activeMeta?.groupTitle}
+        credit={activeMeta?.credit}
       />
     </main>
   )

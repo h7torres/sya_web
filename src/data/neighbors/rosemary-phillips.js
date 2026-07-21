@@ -1,7 +1,7 @@
 const neighbor = {
-  id: 'francisco-sevilla',
-  name: 'Francisco Javier Sevilla Apodaca',
-  role: 'Retired School Teacher',
+  id: 'rosemary-phillips',
+  name: 'Rosemary Phillips',
+  role: 'Co-Historian, Southbay Historical Society',
   bio: '',
   photo: null,
   interview: '',

@@ -1,35 +1,12 @@
 import { useParams, Link } from 'react-router-dom'
 import Container from '../components/Container.jsx'
+import NeighborAvatar from '../components/NeighborAvatar.jsx'
 import neighbors from '../data/neighbors/index.js'
-
-function PhotoOrInitials({ neighbor, className }) {
-  if (neighbor.photo) {
-    return (
-      <img
-        src={neighbor.photo}
-        alt={neighbor.name}
-        className={`${className} object-cover`}
-      />
-    )
-  }
-  const initials = neighbor.name
-    .split(' ')
-    .map((part) => part[0])
-    .join('')
-    .slice(0, 2)
-  return (
-    <div
-      className={`${className} bg-paper border border-ink flex items-center justify-center`}
-    >
-      <span className="font-display text-2xl text-ink">{initials}</span>
-    </div>
-  )
-}
 
 function NeighborsList() {
   return (
     <div className="py-16">
-      <h1 className="font-mono text-2xl text-ink mb-2">Neighbors</h1>
+      <h1 className="font-mono text-2xl text-ink mb-2">The people of San Ysidro</h1>
       
 
       {neighbors.length === 0 ? (
@@ -37,10 +14,10 @@ function NeighborsList() {
           No neighbors added yet — add a file to src/data/neighbors/.
         </p>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-10">
           {neighbors.map((neighbor) => (
             <Link key={neighbor.id} to={`/neighbors/${neighbor.id}`} className="group">
-              <PhotoOrInitials neighbor={neighbor} className="w-full aspect-square" />
+              <NeighborAvatar neighbor={neighbor} className="w-full aspect-square" />
               <p className="font-mono text-sm text-ink mt-3 group-hover:text-clay">
                 {neighbor.name}
               </p>
@@ -66,7 +43,7 @@ function NeighborProfile({ neighbor }) {
       </Link>
 
       <div className="mt-6 flex flex-col md:flex-row gap-8 items-start">
-        <PhotoOrInitials neighbor={neighbor} className="w-40 h-40 shrink-0" />
+        <NeighborAvatar neighbor={neighbor} className="w-40 h-40 shrink-0" />
         <div>
           <h1 className="font-mono text-2xl text-ink">{neighbor.name}</h1>
           <p className="font-mono text-xs text-stamp uppercase tracking-widest mt-1">

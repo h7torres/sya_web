@@ -1,9 +1,7 @@
-// Name only for now — bio, photo, and everything else to be added later.
-
 const neighbor = {
   id: 'mario-jacquez',
   name: 'Mario Jacquez',
-  role: '',
+  role: "Master's Student in History, SDSU",
   bio: '',
   photo: null,
   interview: '',

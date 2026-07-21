@@ -1,7 +1,7 @@
 const neighbor = {
-  id: 'francisco-sevilla',
-  name: 'Francisco Javier Sevilla Apodaca',
-  role: 'Retired School Teacher',
+  id: 'jesus-monzon',
+  name: 'Jesus Monzon',
+  role: 'Founder, BajaMex Insurance',
   bio: '',
   photo: null,
   interview: '',

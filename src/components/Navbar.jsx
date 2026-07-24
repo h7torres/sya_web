@@ -12,9 +12,9 @@ const links = [
 
 export default function Navbar() {
   return (
-    <header className="border-b border-rule">
+    <header className="sticky top-0 z-40 bg-paper border-b border-rule">
       <Container>
-        <nav className="flex flex-col items-center gap-4 py-8">
+        <nav className="flex flex-col items-center gap-2 pt-6 pb-2">
           <Link to="/" className="relative inline-block group overflow-hidden">
             <img src={logo} alt="San Ysidro Archive" className="h-8 w-auto block" />
             <div className="absolute inset-0 bg-paper/0 group-hover:bg-paper/70 transition-colors duration-200 flex items-center justify-center">

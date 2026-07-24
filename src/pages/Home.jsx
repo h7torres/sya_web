@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import Container from '../components/Container.jsx'
 import NeighborAvatar from '../components/NeighborAvatar.jsx'
@@ -6,7 +6,11 @@ import Lightbox from '../components/Lightbox.jsx'
 import { flatImages, setCovers, allItems, getDocumentPages } from '../data/gallery/loadGallery.js'
 import neighbors from '../data/neighbors/index.js'
 
-const featuredCandidates = [...flatImages, ...setCovers]
+const EXCLUDED_FROM_FEATURED = ['sy-school-1955']
+
+const featuredCandidates = [...flatImages, ...setCovers].filter(
+  (item) => !EXCLUDED_FROM_FEATURED.includes(item.key)
+)
 
 function shuffle(array) {
   const result = [...array]
@@ -17,7 +21,18 @@ function shuffle(array) {
   return result
 }
 
-const TARGET_WEIGHT = 9
+function packColumns(images, numCols) {
+  const sorted = [...images].sort((a, b) => b.weight - a.weight)
+  const columns = Array.from({ length: numCols }, () => ({ items: [], weight: 0 }))
+  for (const img of sorted) {
+    const shortest = columns.reduce((a, b) => (b.weight < a.weight ? b : a))
+    shortest.items.push(img)
+    shortest.weight += img.weight
+  }
+  return columns.map((c) => c.items)
+}
+
+const TARGET_WEIGHT = 16
 const NEIGHBOR_PREVIEW_COUNT = 4
 
 export default function Home() {
@@ -25,6 +40,8 @@ export default function Home() {
   const [displayedImages, setDisplayedImages] = useState([])
   const [activeGroup, setActiveGroup] = useState(null)
   const [activePosition, setActivePosition] = useState(0)
+  const scrollRef = useRef(null)
+  const [thumbStyle, setThumbStyle] = useState({ height: '0%', top: '0%' })
 
   const featuredNeighbors = useMemo(
     () => shuffle(neighbors).slice(0, NEIGHBOR_PREVIEW_COUNT),
@@ -71,6 +88,33 @@ export default function Home() {
     }
   }, [shuffledCandidates])
 
+  const mobileColumns = useMemo(
+    () => packColumns(displayedImages, 2),
+    [displayedImages]
+  )
+  const tabletColumns = useMemo(
+    () => packColumns(displayedImages, 3),
+    [displayedImages]
+  )
+  const desktopColumns = useMemo(
+    () => packColumns(displayedImages, 3),
+    [displayedImages]
+  )
+
+  function handleFeaturedScroll() {
+    const el = scrollRef.current
+    if (!el) return
+    const { scrollTop, scrollHeight, clientHeight } = el
+    if (scrollHeight <= clientHeight) return
+    const thumbHeight = Math.max((clientHeight / scrollHeight) * 100, 5)
+    const thumbTop = (scrollTop / (scrollHeight - clientHeight)) * (100 - thumbHeight)
+    setThumbStyle({ height: `${thumbHeight}%`, top: `${thumbTop}%` })
+  }
+
+  useEffect(() => {
+    handleFeaturedScroll()
+  }, [displayedImages])
+
   function openItem(item) {
     setActiveGroup(item.group)
     if (item.isSet) {
@@ -109,16 +153,37 @@ export default function Home() {
     setActivePosition((prev) => (prev + direction + total) % total)
   }
 
+  function renderColumns(columns) {
+    return columns.map((col, i) => (
+      <div key={i} className="flex flex-col gap-2">
+        {col.map((img) => (
+          <button
+            key={img.id}
+            onClick={() => openItem(img)}
+            className="relative block w-full group overflow-hidden text-left"
+          >
+            <img src={img.src} alt={img.caption} className="w-full block" />
+            <div className="absolute inset-0 bg-ink/0 group-hover:bg-ink/60 transition-colors duration-200 flex items-center justify-center">
+              <p className="font-mono text-xs text-paper text-center px-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                {img.caption}
+              </p>
+            </div>
+          </button>
+        ))}
+      </div>
+    ))
+  }
+
   return (
     <main>
       <Container>
-        <div className="pt-16 pb-16">
+        <div className="pt-8 pb-16">
           <h1 className="sr-only">San Ysidro Archive</h1>
 
           <h2 className="font-mono text-2xl text-ink mb-2 text-left">
             Our Mission
           </h2>
-          <p className="font-cutive max-w-2xl text-left text-ink/80 leading-relaxed">
+          <p className="font-cutive text-sm md:text-base max-w-2xl text-left text-ink/80 leading-relaxed">
             The San Ysidro Archive serves as a living repository for the
             countercultural histories of 92173. By documenting local
             activism, joy, and resilience, the archive curates a
@@ -128,7 +193,7 @@ export default function Home() {
           <h2 className="font-mono text-2xl text-ink mt-6 mb-2 max-w-2xl ml-auto text-right">
             Nuestra Misión
           </h2>
-          <p className="font-cutive max-w-2xl ml-auto text-right text-ink/80 leading-relaxed">
+          <p className="font-cutive text-sm md:text-base max-w-2xl ml-auto text-right text-ink/80 leading-relaxed">
             El Archivo de San Ysidro es un repositorio de las historias
             contraculturales del área 92173. Al documentar el activismo,
             la alegría y la resiliencia de San Ysidro, el archivo
@@ -145,45 +210,59 @@ export default function Home() {
             Explore the Archive
           </Link>
         </div>
+      </Container>
 
-        {displayedImages.length > 0 && (
-          <section className="pb-24">
-            <h2 className="font-mono text-xs uppercase tracking-widest text-stamp mb-6">
-              Featured Bits From The Archive 
-            </h2>
-            <div className="columns-2 md:columns-3 gap-4">
-              {displayedImages.map((img) => (
-                <button
-                  key={img.id}
-                  onClick={() => openItem(img)}
-                  className="relative block w-full mb-4 break-inside-avoid group overflow-hidden rounded-sm text-left"
-                >
-                  <img src={img.src} alt={img.caption} className="w-full block" />
-                  <div className="absolute inset-0 bg-ink/0 group-hover:bg-ink/60 transition-colors duration-200 flex items-center justify-center">
-                    <p className="font-mono text-xs text-paper text-center px-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                      {img.caption}
-                    </p>
-                  </div>
-                </button>
-              ))}
-            </div>
-            <div className="mt-10 flex justify-center">
-              <Link
-                to="/library"
-                className="font-mono text-xs uppercase tracking-widest text-stamp hover:text-stamp/50 underline transition-colors"
-              >
-                See More! →
-              </Link>
-            </div>
-          </section>
-        )}
+      {displayedImages.length > 0 && (
+        <section className="pb-24 w-full px-4 md:px-8">
+          <h2 className="font-mono text-lg uppercase tracking-widest text-stamp mb-6 text-center">
+            Featured Bits From The Archive
+          </h2>
 
+          <div className="relative">
+            <div
+              ref={scrollRef}
+              onScroll={handleFeaturedScroll}
+              className="max-h-[70vh] overflow-y-auto pr-2 lg:max-w-[60%] lg:mx-auto no-native-scrollbar"
+            >
+              <div className="grid grid-cols-2 gap-2 md:hidden">
+                {renderColumns(mobileColumns)}
+              </div>
+
+              <div className="hidden md:grid lg:hidden md:grid-cols-3 gap-2">
+                {renderColumns(tabletColumns)}
+              </div>
+
+              <div className="hidden lg:grid lg:grid-cols-3 gap-2">
+                {renderColumns(desktopColumns)}
+              </div>
+            </div>
+
+            <div className="hidden lg:block absolute top-0 bottom-0 w-[2px] bg-ink/10 right-[calc(20%-8px)]">
+              <div
+                className="absolute w-full bg-ink/30 rounded-full transition-[top] duration-75"
+                style={thumbStyle}
+              />
+            </div>
+          </div>
+
+          <div className="mt-10 flex justify-end lg:max-w-[60%] lg:mx-auto">
+            <Link
+              to="/library"
+              className="font-mono text-xs uppercase tracking-widest text-stamp hover:text-stamp/50 underline transition-colors"
+            >
+              See More! →
+            </Link>
+          </div>
+        </section>
+      )}
+
+      <Container>
         {featuredNeighbors.length > 0 && (
           <section className="pb-24 border-t border-rule pt-16">
             <h2 className="font-mono text-xs uppercase tracking-widest text-stamp mb-6">
               Featured Neighbors
             </h2>
-            <div className="grid grid-cols-4 gap-6 max-w-2xl mx-auto">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-2xl md:max-w-6xl mx-auto">
               {featuredNeighbors.map((neighbor) => (
                 <Link
                   key={neighbor.id}
@@ -205,7 +284,7 @@ export default function Home() {
                 </Link>
               ))}
             </div>
-            <div className="mt-8 flex justify-center">
+            <div className="mt-8 flex justify-end max-w-2xl md:max-w-6xl mx-auto">
               <Link
                 to="/neighbors"
                 className="font-mono text-xs uppercase tracking-widest text-stamp hover:text-stamp/50 underline transition-colors"

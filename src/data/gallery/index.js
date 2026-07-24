@@ -35,6 +35,8 @@ export const imageSets = Object.entries(grouped).map(([slug, images]) => {
     slug,
     title: meta.title || titleCase(slug),
     credit: meta.credit || null,
+    tags: meta.tags || [],
+    decade: meta.decade || null,
     cover: sorted[0].src,
     images: sorted,
   }

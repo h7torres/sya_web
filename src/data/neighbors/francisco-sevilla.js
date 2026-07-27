@@ -6,7 +6,7 @@ const neighbor = {
   role: 'Retired School Teacher',
   bio: '',
   photo,
-  interview: '',
+  interview: 'https://youtu.be/wdTe9eU2HrU?si=wHFeetp2gfRuBBXJ',
   contributions: [],
 }
 

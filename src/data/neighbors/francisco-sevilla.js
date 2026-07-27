@@ -1,4 +1,4 @@
-import photo from '../../assets/neighbors/fransisco-sevilla.jpg'
+import photo from '../../assets/neighbors/francisco-sevilla.jpg'
 
 const neighbor = {
   id: 'francisco-sevilla',

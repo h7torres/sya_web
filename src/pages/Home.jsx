@@ -44,7 +44,7 @@ export default function Home() {
   const [thumbStyle, setThumbStyle] = useState({ height: '0%', top: '0%' })
 
   const featuredNeighbors = useMemo(
-    () => shuffle(neighbors).slice(0, NEIGHBOR_PREVIEW_COUNT),
+    () => shuffle(neighbors.filter((n) => n.photo)).slice(0, NEIGHBOR_PREVIEW_COUNT),
     []
   )
 

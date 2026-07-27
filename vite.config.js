@@ -7,5 +7,5 @@ import react from '@vitejs/plugin-react'
 // once deployed.
 export default defineConfig({
   plugins: [react()],
-  base: '/sya_web/',
+  base: '/',
 })

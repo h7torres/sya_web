@@ -9,7 +9,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     {/* basename matches vite.config.js's `base` so routing still works
         once this is deployed under github.io/sya_web/ instead
         of the root domain. */}
-    <BrowserRouter basename="/sya_web/">
+    <BrowserRouter basename="/">
       <App />
     </BrowserRouter>
   </React.StrictMode>,

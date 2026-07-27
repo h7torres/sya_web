@@ -2,19 +2,22 @@ import { useParams, Link } from 'react-router-dom'
 import Container from '../components/Container.jsx'
 import NeighborAvatar from '../components/NeighborAvatar.jsx'
 import neighbors from '../data/neighbors/index.js'
+import React from 'react'
+
+const visibleNeighbors = neighbors.filter((n) => n.photo)
 
 function NeighborsList() {
   return (
     <div className="py-16">
       <h1 className="font-mono text-2xl text-ink mb-2"> Meet The People of San Ysidro!</h1>
 
-      {neighbors.length === 0 ? (
+      {visibleNeighbors.length === 0 ? (
         <p className="font-cutive text-ink/60">
           No neighbors added yet — add a file to src/data/neighbors/.
         </p>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-10">
-          {neighbors.map((neighbor) => (
+          {visibleNeighbors.map((neighbor) => (
             <Link key={neighbor.id} to={`/neighbors/${neighbor.id}`} className="group">
               <NeighborAvatar neighbor={neighbor} className="w-full aspect-square" />
               <p className="font-mono text-sm text-ink mt-3 group-hover:text-clay">
@@ -50,11 +53,31 @@ function getYoutubeEmbedUrl(url) {
   return videoId ? `https://www.youtube.com/embed/${videoId}` : null
 }
 
+function ContributionLink({ contribution }) {
+  const isExternal = contribution.url.startsWith('http')
+  return (
+    <div>
+      {React.createElement(
+        'a',
+        {
+          href: contribution.url,
+          target: isExternal ? '_blank' : undefined,
+          rel: isExternal ? 'noopener noreferrer' : undefined,
+          className: 'font-mono text-sm text-stamp hover:text-clay underline',
+        },
+        contribution.label
+      )}
+      <span className="font-mono text-xs text-ink/50 ml-2">
+        {contribution.type}
+      </span>
+    </div>
+  )
+}
+
 function NeighborProfile({ neighbor }) {
   const embedUrl = getYoutubeEmbedUrl(neighbor.interview)
 
   return (
-    // makes the photo+text area wider
     <div className="py-16 max-w-5xl">
       <Link
         to="/neighbors"
@@ -77,19 +100,7 @@ function NeighborProfile({ neighbor }) {
           {neighbor.contributions?.length > 0 && (
             <div className="mt-8 space-y-2">
               {neighbor.contributions.map((c) => (
-                <div key={c.url}>
-                  <a
-                    href={c.url}
-                    target={c.url.startsWith('http') ? '_blank' : undefined}
-                    rel={c.url.startsWith('http') ? 'noopener noreferrer' : undefined}
-                    className="font-mono text-sm text-stamp hover:text-clay underline"
-                  >
-                    {c.label}
-                  </a>
-                  <span className="font-mono text-xs text-ink/50 ml-2">
-                    {c.type}
-                  </span>
-                </div>
+                <ContributionLink key={c.url} contribution={c} />
               ))}
             </div>
           )}
@@ -148,11 +159,12 @@ export default function Neighbors() {
   }
 
   const neighbor = neighbors.find((n) => n.id === slug)
+  const isVisible = neighbor && neighbor.photo
 
   return (
     <main>
       <Container>
-        {neighbor ? (
+        {isVisible ? (
           <NeighborProfile neighbor={neighbor} />
         ) : (
           <div className="py-16">

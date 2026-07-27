@@ -17,7 +17,7 @@ const neighbor = {
   role: 'Photographer',
   bio: 'Photographer documenting everyday life in San Ysidro.',
   photo,
-  interview: 'https://youtu.be/rQkNYAmJyE0?si=_60O3jfKmZzfP1Lc',
+  interview: 'https://youtu.be/CIKKHp1GM1U?si=1tQEp91lFnkFh9Pg',
   contributions: [
     {
       label: 'Andres Preciado Portfolio',

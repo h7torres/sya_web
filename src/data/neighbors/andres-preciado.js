@@ -14,8 +14,8 @@ import photo from '../../assets/neighbors/andres-preciado.jpg'
 const neighbor = {
   id: 'andres-preciado',
   name: 'Andres Preciado',
-  role: 'Photographer',
-  bio: 'Photographer documenting everyday life in San Ysidro.',
+  role: 'Writer/Poet',
+  bio: 'Gerd',
   photo,
   interview: 'https://youtu.be/CIKKHp1GM1U?si=1tQEp91lFnkFh9Pg',
   contributions: [

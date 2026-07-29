@@ -13,7 +13,7 @@ const rightLinks = [
   { to: '/community', label: 'Community' },
 ]
 
-const allLinks = [...leftLinks, ...rightLinks, { to: '/contact', label: 'Contact' }]
+const allLinks = [...leftLinks, ...rightLinks]
 
 function NavItem({ to, label, onClick }) {
   return (
@@ -39,21 +39,29 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-40 bg-paper border-b border-rule">
       <Container>
-        {/* Mobile: logo left, menu button right */}
+        {/* Mobile: logo left, plain text "Menu" and "Contact" right */}
         <nav className="relative flex lg:hidden items-center justify-between py-4">
           <Link to="/" className="relative inline-block group overflow-hidden shrink-0">
-            <img src={logo} alt="San Ysidro Archive" className="h-5 w-auto block" />
+            <img src={logo} alt="San Ysidro Archive" className="h-7 w-auto block" />
           </Link>
 
-          <button
-            onClick={() => setMenuOpen((prev) => !prev)}
-            className="font-mono text-xs uppercase tracking-widest border border-ink px-2 py-1 hover:bg-ink hover:text-paper transition-colors"
-          >
-            {menuOpen ? 'Close' : 'Menu'}
-          </button>
+          <div className="flex items-center gap-6">
+            <button
+              onClick={() => setMenuOpen((prev) => !prev)}
+              className="font-mono text-xs uppercase tracking-widest text-ink"
+            >
+              {menuOpen ? 'Close' : 'Menu'}
+            </button>
+            <Link
+              to="/contact"
+              className="font-mono text-xs uppercase tracking-widest border border-ink px-3 py-1.5 hover:bg-ink hover:text-paper transition-colors"
+            >
+              Contact
+            </Link>
+          </div>
 
           {menuOpen && (
-            <div className="absolute top-full left-0 right-0 mt-2 bg-paper border border-ink py-3 flex flex-wrap justify-center gap-x-6 gap-y-2 shadow-lg">
+            <div className="absolute top-full left-0 right-0 mt-2 bg-paper border border-ink py-6 flex flex-wrap justify-center gap-x-6 gap-y-2 shadow-lg">
               {allLinks.map((link) => (
                 <NavItem
                   key={link.to}

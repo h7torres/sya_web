@@ -39,13 +39,13 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-40 bg-paper border-b border-rule">
       <Container>
-        {/* Mobile: logo left, plain text "Menu" and "Contact" right */}
-        <nav className="relative flex lg:hidden items-center justify-between py-4">
+        {/* Mobile: logo left, plain text "Menu" and boxed "Contact" right */}
+        <nav className="relative flex lg:hidden items-center justify-between py-4 gap-4">
           <Link to="/" className="relative inline-block group overflow-hidden shrink-0">
-            <img src={logo} alt="San Ysidro Archive" className="h-7 w-auto block" />
+            <img src={logo} alt="San Ysidro Archive" className="h-5 w-auto block" />
           </Link>
 
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-6 shrink-0">
             <button
               onClick={() => setMenuOpen((prev) => !prev)}
               className="font-mono text-xs uppercase tracking-widest text-ink"

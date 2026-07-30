@@ -180,7 +180,7 @@ export default function Home() {
         <div className="pt-8 pb-16">
           <h1 className="sr-only">San Ysidro Archive</h1>
 
-          <h2 className="font-mono text-2xl text-ink mb-2 text-left">
+          <h2 className="font-mono text-xl text-ink mb-2 text-left">
             Our Mission
           </h2>
           <p className="font-cutive text-sm md:text-base max-w-2xl text-left text-ink/80 leading-relaxed">
@@ -190,7 +190,7 @@ export default function Home() {
             communal memory that thrives independently of the border.
           </p>
 
-          <h2 className="font-mono text-2xl text-ink mt-6 mb-2 max-w-2xl ml-auto text-right">
+          <h2 className="font-mono text-xl text-ink mt-6 mb-2 max-w-2xl ml-auto text-right">
             Nuestra Misión
           </h2>
           <p className="font-cutive text-sm md:text-base max-w-2xl ml-auto text-right text-ink/80 leading-relaxed">
@@ -259,7 +259,7 @@ export default function Home() {
       <Container>
         {featuredNeighbors.length > 0 && (
           <section className="pb-24 border-t border-rule pt-16">
-            <h2 className="font-mono text-xs uppercase tracking-widest text-stamp mb-6">
+            <h2 className="font-mono text-lg uppercase tracking-widest text-stamp mb-6 text-center">
               Featured Neighbors
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-2xl md:max-w-6xl mx-auto">
@@ -305,7 +305,7 @@ export default function Home() {
           </p>
           <Link
             to="/contact"
-            className="inline-block font-mono text-xs uppercase tracking-widest border border-ink px-6 py-3 rounded-full hover:bg-ink hover:text-paper transition-colors"
+            className="inline-block font-mono text-xs uppercase tracking-widest border border-ink px-6 py-3 hover:bg-ink hover:text-paper transition-colors"
           >
             Submit to the Archive
           </Link>

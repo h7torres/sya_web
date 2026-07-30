@@ -19,7 +19,8 @@ function getGroupTitle(folderName) {
 
 function isGroupCollection(folderName) {
   const meta = groupMeta[folderName]
-  return typeof meta === 'object' && meta.isCollection === true
+  if (typeof meta === 'object' && meta.isCollection === false) return false
+  return true
 }
 
 function getGroupTags(folderName) {

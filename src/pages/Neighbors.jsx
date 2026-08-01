@@ -8,24 +8,42 @@ const visibleNeighbors = neighbors.filter((n) => n.photo)
 
 function NeighborsList() {
   return (
-    <div className="py-16">
-      <h1 className="font-mono text-2xl text-ink mb-2"> Meet The People of San Ysidro!</h1>
+    <div className="pt-24 md:pt-25  pb-16">
+      <h1 className="font-mono text-3xl text-ink mb-5 text-center">
+        Neighbors
+      </h1>
+
+      <p className="font-cutive text-ink/80 text-center max-w-2xl mx-auto leading-relaxed mb-20">
+        These are the people who make San Ysidro what it is, business
+        owners, artists, longtime residents, and everyone in between.
+        Get to know their stories below.
+      </p>
+
 
       {visibleNeighbors.length === 0 ? (
         <p className="font-cutive text-ink/60">
           No neighbors added yet — add a file to src/data/neighbors/.
         </p>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-10">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-10 mt-10">
           {visibleNeighbors.map((neighbor) => (
-            <Link key={neighbor.id} to={`/neighbors/${neighbor.id}`} className="group">
-              <NeighborAvatar neighbor={neighbor} className="w-full aspect-square" />
-              <p className="font-mono text-sm text-ink mt-3 group-hover:text-clay">
+            <Link
+              key={neighbor.id}
+              to={`/neighbors/${neighbor.id}`}
+              className="group text-center"
+            >
+              <NeighborAvatar
+                neighbor={neighbor}
+                className="w-full aspect-square border border-rule group-hover:border-ink transition-colors"
+              />
+              <p className="font-mono text-base text-ink mt-4 group-hover:text-clay transition-colors">
                 {neighbor.name}
               </p>
-              <p className="font-mono text-xs text-stamp uppercase tracking-widest">
-                {neighbor.role}
-              </p>
+              {neighbor.role && (
+                <p className="font-mono text-[10px] text-stamp/50 uppercase tracking-widest mt-1">
+                  {neighbor.role}
+                </p>
+              )}
             </Link>
           ))}
         </div>

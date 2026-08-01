@@ -177,10 +177,10 @@ export default function Home() {
   return (
     <main>
       <Container>
-        <div className="pt-8 pb-16">
+        <div className="pt-24 md:pt-25 pb-16">
           <h1 className="sr-only">San Ysidro Archive</h1>
 
-          <h2 className="font-mono text-xl text-ink mb-2 text-left">
+          <h2 className="font-mono text-2xl text-ink mb-2 text-left">
             Our Mission
           </h2>
           <p className="font-cutive text-sm md:text-base max-w-2xl text-left text-ink/80 leading-relaxed">
@@ -190,7 +190,7 @@ export default function Home() {
             communal memory that thrives independently of the border.
           </p>
 
-          <h2 className="font-mono text-xl text-ink mt-6 mb-2 max-w-2xl ml-auto text-right">
+          <h2 className="font-mono text-2xl text-ink mt-6 mb-2 max-w-2xl ml-auto text-right">
             Nuestra Misión
           </h2>
           <p className="font-cutive text-sm md:text-base max-w-2xl ml-auto text-right text-ink/80 leading-relaxed">
@@ -205,8 +205,8 @@ export default function Home() {
         <div className="pb-16 flex justify-center">
           <Link
             to="/library"
-            className="font-mono text-xs uppercase tracking-widest border border-ink px-6 py-3 rounded-full hover:bg-ink hover:text-paper transition-colors"
-          >
+            className="inline-block font-mono text-xs uppercase tracking-widest border border-ink px-6 py-3 hover:bg-ink hover:text-paper transition-colors"
+            >
             Explore the Archive
           </Link>
         </div>
@@ -256,13 +256,13 @@ export default function Home() {
         </section>
       )}
 
-      <Container>
-        {featuredNeighbors.length > 0 && (
-          <section className="pb-24 border-t border-rule pt-16">
+      {featuredNeighbors.length > 0 && (
+        <div className="w-full px-4 md:px-8">
+          <section className="pb-24 border-t border-rule pt-16 max-w-6xl mx-auto">
             <h2 className="font-mono text-lg uppercase tracking-widest text-stamp mb-6 text-center">
               Featured Neighbors
             </h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-2xl md:max-w-6xl mx-auto">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
               {featuredNeighbors.map((neighbor) => (
                 <Link
                   key={neighbor.id}
@@ -271,30 +271,32 @@ export default function Home() {
                 >
                   <NeighborAvatar
                     neighbor={neighbor}
-                    className="w-full aspect-square"
+                    className="w-full aspect-square border border-rule group-hover:border-ink transition-colors"
                   />
-                  <p className="font-mono text-sm text-ink mt-3 group-hover:text-clay">
+                  <p className="font-mono text-base text-ink mt-4 group-hover:text-clay transition-colors">
                     {neighbor.name}
                   </p>
                   {neighbor.role && (
-                    <p className="font-mono text-xs text-stamp uppercase tracking-widest">
+                    <p className="font-mono text-[10px] text-stamp/50 uppercase tracking-widest mt-1">
                       {neighbor.role}
                     </p>
                   )}
                 </Link>
               ))}
             </div>
-            <div className="mt-8 flex justify-end max-w-2xl md:max-w-6xl mx-auto">
+            <div className="mt-12 flex justify-end">
               <Link
                 to="/neighbors"
                 className="font-mono text-xs uppercase tracking-widest text-stamp hover:text-stamp/50 underline transition-colors"
               >
-                Meet All of Our Neighbors →
+                Meet All of Our Neighbors! →
               </Link>
             </div>
           </section>
-        )}
+        </div>
+      )}
 
+      <Container>
         <section className="pb-24 border-t border-rule pt-16 text-center">
           <h2 className="font-mono text-2xl text-ink mb-3">
             Have something to share?
@@ -306,7 +308,7 @@ export default function Home() {
           <Link
             to="/contact"
             className="inline-block font-mono text-xs uppercase tracking-widest border border-ink px-6 py-3 hover:bg-ink hover:text-paper transition-colors"
-          >
+            >
             Submit to the Archive
           </Link>
         </section>

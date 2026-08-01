@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import Container from '../components/Container.jsx'
 
 // One object per Q&A pair — makes it easy to add, remove, or reorder
@@ -65,27 +66,24 @@ export default function Contact() {
             </h2>
             <p className="font-mono uppercase tracking-wide text-ink/80">
               Email{' '}
-              <a
-                href="mailto:sanysidroarchive@gmail.com"
-                className="hover:text-clay"
-              >
-                sanysidroarchive@gmail.com
-              </a>
+              <a href="mailto:sanysidroarchive@gmail.com" className="hover:text-clay">sanysidroarchive@gmail.com</a>
             </p>
             <p className="font-mono uppercase tracking-wide text-ink/80 mt-4">
               or
             </p>
             <p className="font-mono uppercase tracking-wide text-ink/80 mt-4">
               DM{' '}
-              <a
-                href="https://instagram.com/sanysidroarchive"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-clay"
-              >
-                @sanysidroarchive
-              </a>{' '}
+              <a href="https://instagram.com/sanysidroarchive" target="_blank" rel="noopener noreferrer" className="hover:text-clay">@sanysidroarchive</a>{' '}
               on Instagram
+            </p>
+          </div>
+
+          <div className="mt-14 pt-8 border-t border-rule">
+            <p className="ffont-mono uppercase tracking-wide text-ink/80">
+              By submitting materials, you agree to our{' '}
+              <Link to="/terms" className="hover:text-clay underline">
+                Terms of Use
+              </Link>
             </p>
           </div>
         </div>

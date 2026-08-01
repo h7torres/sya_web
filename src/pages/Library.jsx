@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import Container from '../components/Container.jsx'
 import Lightbox from '../components/Lightbox.jsx'
@@ -23,6 +23,93 @@ function getSiblings(groupKey) {
   return flatImages.filter((img) => img.group === groupKey)
 }
 
+const PAGE_SIZE = 24
+
+// Only used to pick which column a photo goes in, so one extreme photo
+// can't wildly unbalance a column — the photo itself still renders at
+// its true, unclamped aspect ratio (see loadAspect below), never cropped.
+const PACK_WEIGHT_MIN = 0.5
+const PACK_WEIGHT_MAX = 3
+
+function loadAspect(src) {
+  return new Promise((resolve) => {
+    const el = new Image()
+    el.onload = () => resolve(el.naturalHeight / el.naturalWidth)
+    el.onerror = () => resolve(1)
+    el.src = src
+  })
+}
+
+// Pinterest-style: each photo keeps its real proportions (no cropping to
+// a uniform box), items are placed one at a time as their own aspect
+// ratio resolves rather than waiting on the whole batch (so the grid
+// fills in progressively instead of popping in all at once), and once a
+// photo is placed in a column it's never moved — so "Load more" only
+// ever appends after what's already there.
+function MasonryColumns({ items, numCols, onItemClick, className }) {
+  const columnsRef = useRef(
+    Array.from({ length: numCols }, () => ({ items: [], weight: 0 }))
+  )
+  const processedRef = useRef(new Set())
+  const [, forceRender] = useState(0)
+
+  useEffect(() => {
+    const newItems = items.filter((item) => !processedRef.current.has(item.id))
+    if (newItems.length === 0) return
+    let cancelled = false
+
+    newItems.forEach((item) => {
+      loadAspect(item.src).then((aspect) => {
+        if (cancelled || processedRef.current.has(item.id)) return
+        processedRef.current.add(item.id)
+        const packWeight = Math.min(
+          Math.max(aspect, PACK_WEIGHT_MIN),
+          PACK_WEIGHT_MAX
+        )
+        const shortest = columnsRef.current.reduce((a, b) =>
+          b.weight < a.weight ? b : a
+        )
+        shortest.items.push({ ...item, aspect })
+        shortest.weight += packWeight
+        forceRender((n) => n + 1)
+      })
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [items])
+
+  return (
+    <div className={className}>
+      {columnsRef.current.map((col, i) => (
+        <div key={i} className="flex flex-col gap-2">
+          {col.items.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => onItemClick(item)}
+              className="relative block w-full group overflow-hidden rounded-sm bg-ink/5 text-left"
+              style={{ aspectRatio: `1 / ${item.aspect}` }}
+            >
+              <img
+                src={item.src}
+                alt={item.caption}
+                loading="lazy"
+                className="w-full h-full object-cover block"
+              />
+              <div className="absolute inset-0 bg-ink/0 group-hover:bg-ink/60 transition-colors duration-200 flex items-center justify-center">
+                <p className="font-mono text-xs text-paper text-center px-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  {item.caption}
+                </p>
+              </div>
+            </button>
+          ))}
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export default function Library() {
   const [activeGroup, setActiveGroup] = useState(null)
   const [activePosition, setActivePosition] = useState(0)
@@ -33,6 +120,7 @@ export default function Library() {
   const [selectedDecade, setSelectedDecade] = useState(null)
   const [sortBy, setSortBy] = useState('random')
   const [filtersOpen, setFiltersOpen] = useState(false)
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
 
   const availableDecades = useMemo(() => {
     const decades = new Set(allItems.map((i) => i.decade).filter(Boolean))
@@ -79,6 +167,14 @@ export default function Library() {
     }
     return shuffle(filteredItems)
   }, [filteredItems, sortBy])
+
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE)
+  }, [searchQuery, selectedTags, selectedDecade, sortBy])
+
+  const visibleItems = displayedItems.slice(0, visibleCount)
+  const hasMore = visibleCount < displayedItems.length
+  const filterKey = `${searchQuery}|${selectedTags.join(',')}|${selectedDecade}|${sortBy}`
 
   useEffect(() => {
     const targetKey = searchParams.get('image')
@@ -143,10 +239,15 @@ export default function Library() {
   return (
     <main>
       <Container>
-        <div className="py-16">
-          <h1 className="font-mono text-3xl text-ink mb-8 text-center">
+        <div className="pt-24 md:pt-25 pb-16">
+          <h1 className="font-mono text-3xl text-ink mb-5 text-center">
             Explore The Archive
           </h1>
+
+          <p className="font-cutive text-ink/80 text-center max-w-2xl mx-auto leading-relaxed mb-10">
+            Search, filter, and browse through decades of San Ysidro's
+            photos, documents, and stories
+          </p>
 
           <div className="flex items-center gap-3 max-w-2xl mx-auto">
             <input
@@ -221,7 +322,7 @@ export default function Library() {
             </div>
           )}
 
-          <p className="font-cutive text-ink/60 text-center mt-4">
+          <p className="font-cutive text-ink/60 text-center mt-10">
             or explore freely!
           </p>
 
@@ -241,32 +342,50 @@ export default function Library() {
             </select>
           </div>
         </div>
+      </Container>
 
-        {displayedItems.length === 0 ? (
+      {displayedItems.length === 0 ? (
+        <Container>
           <p className="font-cutive text-ink/60 text-center pb-24">
             No items match your search or filters.
           </p>
-        ) : (
-          <div className="columns-2 md:columns-4 gap-4 pb-16">
-            {displayedItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => openItem(item)}
-                className="block w-full mb-4 break-inside-avoid text-left"
-              >
-                <img
-                  src={item.src}
-                  alt={item.caption}
-                  className="w-full rounded-sm"
-                />
-                <p className="font-mono text-xs text-ink/60 mt-2 text-center">
-                  {item.caption}
-                </p>
-              </button>
-            ))}
+        </Container>
+      ) : (
+        <div className="w-full px-4 md:px-8">
+          <div className="max-w-7xl mx-auto pb-8">
+            <MasonryColumns
+              key={`${filterKey}-mobile`}
+              items={visibleItems}
+              numCols={2}
+              onItemClick={openItem}
+              className="grid grid-cols-2 gap-2 md:hidden"
+            />
+            <MasonryColumns
+              key={`${filterKey}-desktop`}
+              items={visibleItems}
+              numCols={4}
+              onItemClick={openItem}
+              className="hidden md:grid md:grid-cols-4 gap-2"
+            />
           </div>
-        )}
 
+          {hasMore && (
+            <div className="text-center pb-16">
+              <button
+                onClick={() => setVisibleCount((prev) => prev + PAGE_SIZE)}
+                className="font-mono text-xs uppercase tracking-widest border border-ink px-6 py-3 hover:bg-ink hover:text-paper transition-colors"
+              >
+                Load more
+              </button>
+              <p className="font-mono text-xs text-ink/40 mt-3">
+                Showing {visibleItems.length} of {displayedItems.length}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      <Container>
         <section className="pb-24 border-t border-rule pt-16 text-center">
           <h2 className="font-mono text-2xl text-ink mb-3">
             Have something to share?
@@ -277,8 +396,8 @@ export default function Library() {
           </p>
           <Link
             to="/contact"
-            className="inline-block font-mono text-xs uppercase tracking-widest border border-ink px-6 py-3 rounded-full hover:bg-ink hover:text-paper transition-colors"
-          >
+            className="inline-block font-mono text-xs uppercase tracking-widest border border-ink px-6 py-3 hover:bg-ink hover:text-paper transition-colors"
+            >
             Submit to the Archive
           </Link>
         </section>

@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom'
+
 import Container from './Container.jsx'
 
 export default function Footer() {
@@ -23,6 +25,14 @@ export default function Footer() {
             >
               Email
             </a>
+            <Link
+              to="/terms"
+              className="font-mono text-xs uppercase tracking-widest text-ink/60 text-stamp hover:text-clay"
+            >
+              Terms of Use
+            </Link>
+
+            
           </div>
         </div>
       </Container>

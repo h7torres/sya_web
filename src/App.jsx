@@ -9,6 +9,7 @@ import Neighbors from './pages/Neighbors.jsx'
 import Community from './pages/Community.jsx'
 import Contact from './pages/Contact.jsx'
 import GallerySet from './pages/GallerySet.jsx'
+import TermsOfUse from './pages/TermsOfUse.jsx'
 
 
 
@@ -29,6 +30,7 @@ export default function App() {
           <Route path="/neighbors/:slug" element={<Neighbors />} />
           <Route path="/community" element={<Community />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/terms" element={<TermsOfUse />} />
         </Routes>
       </div>
       <Footer />

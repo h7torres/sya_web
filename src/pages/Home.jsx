@@ -221,7 +221,7 @@ export default function Home() {
   return (
     <main>
       <Container>
-        <div className="pt-8 pb-16">
+        <div className="pt-24 md:pt-20 pb-16">
           <h1 className="sr-only">San Ysidro Archive</h1>
 
           <h2 className="font-mono text-xl text-ink mb-2 text-left">

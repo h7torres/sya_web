@@ -37,20 +37,19 @@ body {
   display: none; /* Chrome, Safari, newer Edge */
 }
 
-/* react-masonry-css: item order is fixed by index (item i always goes to
-   column i % columnCount), so appending new items never moves existing
-   ones — unlike native CSS columns, which height-balances and reflows. */
-.masonry-grid {
-  display: flex;
-  margin-left: -1rem; /* offsets the column gutter below */
-  width: auto;
+/* Staggered pop-in for the Featured Bits images once they're ready —
+   each tile sets its own animation-delay inline based on index. */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.masonry-grid_column {
-  padding-left: 1rem; /* gutter size */
-  background-clip: padding-box;
-}
-
-.masonry-grid_column > * {
-  margin-bottom: 1rem;
+.animate-fade-in-up {
+  animation: fadeInUp 0.35s ease-out both;
 }

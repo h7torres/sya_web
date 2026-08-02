@@ -10,7 +10,7 @@ export default function GallerySet() {
   const photos = flatImages.filter((img) => img.group === slug)
   const meta = groupMeta[slug]
   const title = typeof meta === 'string' ? meta : meta?.title
-
+  const description = typeof meta === 'object' ? meta?.description : null
   const [activeIndex, setActiveIndex] = useState(-1)
   const [searchParams] = useSearchParams()
 
@@ -64,7 +64,15 @@ export default function GallerySet() {
           >
             ← Back to Library
           </Link>
-          <h1 className="font-mono text-2xl text-ink mt-4 mb-10">{title}</h1>
+          
+          <h1 className={`font-mono text-2xl text-ink mt-4 text-center ${description ? 'mb-2' : 'mb-10'}`}>
+            {title}
+          </h1>
+          {description && (
+            <p className="font-cutive text-ink/80 max-w-2xl mx-auto text-center leading-relaxed mb-10">
+              {description}
+            </p>
+          )}
 
           <div className="columns-2 md:columns-3 gap-4">
             {photos.map((photo, index) => (

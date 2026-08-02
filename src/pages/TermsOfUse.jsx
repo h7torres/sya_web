@@ -35,7 +35,7 @@ export default function TermsOfUse() {
   return (
     <main>
       <Container>
-        <div className="pt-24 md:pt-25 pb-16 max-w-2xl">
+        <div className="pt-24 md:pt-25 pb-16 max-w-2xl mx-auto">
           <h1 className="font-mono text-3xl text-ink mb-16 text-center">
             Terms of Use
           </h1>

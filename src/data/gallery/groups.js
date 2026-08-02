@@ -25,6 +25,15 @@ const groupMeta = {
     year: null,
     yearRange: [1990, 1999],
   },
+
+   'san-ysidro-video-project-2': {
+    title: 'San Ysidro Video Project by Carlos Luna, 2024',
+    description:'What started as a test of my new 10mm lens, led to an impromptu video project. In the video I combine videos and photos I took around San Ysidro BLVD on January 2024. I sketched a couple of mysterious creatures and added them to some of the shots and photos in an attempt to add something interesting and eye-catching - Carlos Luna @sanysidrocam',
+    isCollection: true,
+    year: 2024,
+    yearRange: [2020,2029],
+    tags: ['Arts and Culture']
+  }
 }
 
 export default groupMeta

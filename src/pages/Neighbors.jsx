@@ -4,46 +4,32 @@ import NeighborAvatar from '../components/NeighborAvatar.jsx'
 import neighbors from '../data/neighbors/index.js'
 import React from 'react'
 
+// Flip this back to true once there's real contribution data to show —
+// the section itself is left fully built below, just not rendered.
+const SHOW_CONTRIBUTIONS_SECTION = false
+
 const visibleNeighbors = neighbors.filter((n) => n.photo)
 
 function NeighborsList() {
   return (
-    <div className="pt-24 md:pt-25  pb-16">
-      <h1 className="font-mono text-3xl text-ink mb-5 text-center">
-        Neighbors
-      </h1>
-
-      <p className="font-cutive text-ink/80 text-center max-w-2xl mx-auto leading-relaxed mb-20">
-        These are the people who make San Ysidro what it is, business
-        owners, artists, longtime residents, and everyone in between.
-        Get to know their stories below.
-      </p>
-
+    <div className="py-16">
+      <h1 className="font-mono text-2xl text-ink mb-2"> Meet The People of San Ysidro!</h1>
 
       {visibleNeighbors.length === 0 ? (
         <p className="font-cutive text-ink/60">
           No neighbors added yet — add a file to src/data/neighbors/.
         </p>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-10 mt-10">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-10">
           {visibleNeighbors.map((neighbor) => (
-            <Link
-              key={neighbor.id}
-              to={`/neighbors/${neighbor.id}`}
-              className="group text-center"
-            >
-              <NeighborAvatar
-                neighbor={neighbor}
-                className="w-full aspect-square border border-rule group-hover:border-ink transition-colors"
-              />
-              <p className="font-mono text-base text-ink mt-4 group-hover:text-clay transition-colors">
+            <Link key={neighbor.id} to={`/neighbors/${neighbor.id}`} className="group">
+              <NeighborAvatar neighbor={neighbor} className="w-full aspect-square" />
+              <p className="font-mono text-sm text-ink mt-3 group-hover:text-clay">
                 {neighbor.name}
               </p>
-              {neighbor.role && (
-                <p className="font-mono text-[10px] text-stamp/50 uppercase tracking-widest mt-1">
-                  {neighbor.role}
-                </p>
-              )}
+              <p className="font-mono text-xs text-stamp uppercase tracking-widest">
+                {neighbor.role}
+              </p>
             </Link>
           ))}
         </div>
@@ -128,14 +114,16 @@ function NeighborProfile({ neighbor }) {
       <hr className="border-rule my-12" />
 
       <div>
-        <h2 className="font-mono text-xl text-ink mb-1">Hear From Them!</h2>
+        <h2 className="font-mono text-xl text-ink mb-1">
+          {embedUrl ? 'Hear From Them!' : 'Hear From Them Soon!'}
+        </h2>
         <p className="font-cutive text-ink/60 text-sm mb-6">
           {embedUrl
             ? `Watch ${neighbor.name}'s interview below.`
             : 'Interview coming soon.'}
         </p>
 
-        {embedUrl ? (
+        {embedUrl && (
           <div className="w-full aspect-video">
             <iframe
               src={embedUrl}
@@ -145,20 +133,18 @@ function NeighborProfile({ neighbor }) {
               allowFullScreen
             />
           </div>
-        ) : (
-          <div className="w-full aspect-video bg-paper border border-rule flex items-center justify-center">
-            <p className="font-mono text-xs text-ink/40 uppercase tracking-widest">
-              Video not yet available
-            </p>
-          </div>
         )}
       </div>
 
-      <hr className="border-rule my-12" />
+      {SHOW_CONTRIBUTIONS_SECTION && (
+        <>
+          <hr className="border-rule my-12" />
 
-      <p className="font-mono text-xs text-ink/50 text-center">
-        {neighbor.name}'s contributions to the archive will appear here.
-      </p>
+          <p className="font-mono text-xs text-ink/50 text-center">
+            {neighbor.name}'s contributions to the archive will appear here.
+          </p>
+        </>
+      )}
     </div>
   )
 }

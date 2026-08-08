@@ -1,9 +1,17 @@
 # Collections
 
-One file per collection, e.g. `nosotros-series.js`, exporting an object
-matching `collectionShape` from `../schema.js`.
+A collection is a folder of sequential images (like a document set)
+browsed on its own dedicated page at `/collections/<slug>`, rather than
+mixed into the regular Library grid.
 
-Each collection's `items` array holds the posts/images grouped under it.
-Those same images can also appear in `../gallery/` (tagged with this
-collection's id) so the Gallery tab can show them too without
-duplicating the source files.
+**To add a new collection:**
+1. Compress its images: drop originals into
+   `archive-master/collections/<slug>/`, then run
+   `node scripts/compress-images.js` — they land in
+   `src/assets/collections/<slug>/`.
+2. Add one entry to `meta.js`, keyed by that same `<slug>`, with a
+   `title`, `description`, `tags`, and `date`.
+
+That's it — `loadCollections.js` scans `src/assets/collections/`
+automatically, sorts each folder's images by filename, and merges in
+the metadata from `meta.js`. No per-collection code needed.

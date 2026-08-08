@@ -6,6 +6,7 @@
 //
 //   archive-master/standalone/*.jpg        -> src/assets/gallery/*.jpg
 //   archive-master/groups/<name>/*.jpg     -> src/assets/gallery/<name>/*.jpg
+//   archive-master/collections/<name>/*.jpg -> src/assets/collections/<name>/*.jpg
 //   archive-master/documents/<name>/*.jpg  -> src/assets/gallery-sets/<name>/*.jpg
 //   archive-master/covers/<neighbor-id>.jpg -> src/assets/neighbors/<neighbor-id>.jpg
 //
@@ -18,6 +19,7 @@ import path from 'path'
 const ROOT = process.cwd()
 const MASTER_DIR = path.join(ROOT, 'archive-master')
 const GALLERY_DIR = path.join(ROOT, 'src/assets/gallery')
+const COLLECTIONS_DIR = path.join(ROOT, 'src/assets/collections')
 const GALLERY_SETS_DIR = path.join(ROOT, 'src/assets/gallery-sets')
 const NEIGHBORS_DIR = path.join(ROOT, 'src/assets/neighbors')
 
@@ -93,6 +95,31 @@ async function processGroups() {
   }
 }
 
+async function processCollections() {
+  const dir = path.join(MASTER_DIR, 'collections')
+  if (!fs.existsSync(dir)) return
+
+  const collectionFolders = fs.readdirSync(dir).filter((f) =>
+    fs.statSync(path.join(dir, f)).isDirectory()
+  )
+
+  for (const collectionName of collectionFolders) {
+    console.log(`\nCollection: ${collectionName}`)
+    const collectionDir = path.join(dir, collectionName)
+    const files = fs.readdirSync(collectionDir).filter((f) => VALID_EXT.test(f))
+
+    for (const file of files) {
+      const inputPath = path.join(collectionDir, file)
+      const outputPath = path.join(COLLECTIONS_DIR, collectionName, outputNameFor(file))
+      if (fs.existsSync(outputPath)) {
+        skippedCount++
+        continue
+      }
+      await compressFile(inputPath, outputPath)
+    }
+  }
+}
+
 async function processDocuments() {
   const dir = path.join(MASTER_DIR, 'documents')
   if (!fs.existsSync(dir)) return
@@ -146,12 +173,13 @@ async function main() {
 
   await processStandalone()
   await processGroups()
+  await processCollections()
   await processDocuments()
   await processCovers()
 
   console.log(`\nDone. ${processedCount} compressed, ${skippedCount} already existed and were skipped.`)
   if (processedCount > 0) {
-    console.log('Remember: new documents need an entry in sets.js, new groups need one in groups.js, new covers need photo imports wired into their neighbor files, and captions.js can be updated for any of these.')
+    console.log('Remember: new documents need an entry in sets.js, new groups need one in groups.js, new collections need a data file in src/data/collections/, new covers need photo imports wired into their neighbor files, and captions.js can be updated for any of these.')
   }
 }
 

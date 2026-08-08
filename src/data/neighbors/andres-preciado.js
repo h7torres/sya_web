@@ -15,7 +15,7 @@ const neighbor = {
   id: 'andres-preciado',
   name: 'Andres Preciado',
   role: 'Writer/Poet',
-  bio: 'Gerd',
+  bio: 'Preciado grew up grilling carne asada from La Bodega with his uncles, serving as an altar boy at Mt. Carmel Church, and frequenting the San Ysidro Library. Today, his upbringing in San Ysidro inspires his creative work as a mixed-media artist/writer, as well as his academic pursuits in English and International Relations at Boston College. He believes “a renaissance is possible for San Ysidro” and hopes to be a part of the artists and cultural workers who shape its future.',
   photo,
   interview: 'https://youtu.be/CIKKHp1GM1U?si=1tQEp91lFnkFh9Pg',
   contributions: [

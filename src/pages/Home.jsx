@@ -21,49 +21,66 @@ function shuffle(array) {
   return result
 }
 
-// Same greedy-balance idea as before, but sideways: each image gets a
-// fixed row height, so its *width* is what varies (proportional to
-// 1/weight, since weight was height-per-unit-width). Balances rows by
-// total width instead of columns by total height.
-function packRows(images, numRows) {
-  const withWidthUnits = images.map((img) => ({
-    ...img,
-    widthUnit: 1 / img.weight,
-  }))
-  const sorted = [...withWidthUnits].sort((a, b) => b.widthUnit - a.widthUnit)
-  const rows = Array.from({ length: numRows }, () => ({ items: [], width: 0 }))
-  for (const img of sorted) {
-    const shortest = rows.reduce((a, b) => (b.width < a.width ? b : a))
-    shortest.items.push(img)
-    shortest.width += img.widthUnit
-  }
-  return rows.map((r) => r.items)
-}
-
-const TARGET_WEIGHT = 16
+// Row heights in px, matching the ROW_HEIGHT Tailwind classes below
+// (h-40 = 160px, h-56 = 224px) — needed as real numbers so we can tell
+// when a row's content has actually reached the container's width.
+const ROW_HEIGHT_PX = { mobile: 160, desktop: 224 }
+const GAP_PX = 8 // gap-2
+// A row is "full" once it's hit the container width AND has at least
+// MIN_PER_ROW images — a few wide photos shouldn't be allowed to call
+// a row done after just one or two. It also stops at MAX_PER_ROW even
+// if there's technically still width left, so a run of narrow photos
+// can't cram in an unreasonable number.
+const MIN_PER_ROW = 4
+const MAX_PER_ROW = 24
 const NEIGHBOR_PREVIEW_COUNT = 4
-// How many candidates to measure per round. Small enough to avoid
-// downloading images we'll never use, large enough that a couple of
-// rounds is usually enough to hit TARGET_WEIGHT.
 const MEASURE_BATCH_SIZE = 10
+// Safety cap so a very wide screen (or a run of unusually tall photos)
+// can't send this into pulling in the whole archive.
+const MAX_CANDIDATES = 160
 
 function measureImage(img) {
   return new Promise((resolve) => {
     const el = new Image()
     el.onload = () => {
       const aspect = el.naturalHeight / el.naturalWidth
-      const weight = Math.min(Math.max(aspect, 0.6), 2.5)
-      resolve({ ...img, weight })
+      resolve({ ...img, aspect })
     }
-    el.onerror = () => resolve({ ...img, weight: 1 })
+    el.onerror = () => resolve({ ...img, aspect: 1 })
     el.src = img.src
   })
 }
 
+function makeRowTrackers(numRows) {
+  return Array.from({ length: numRows }, () => ({ items: [], width: 0 }))
+}
+
+function rowIsFull(row, containerWidth) {
+  if (row.items.length >= MAX_PER_ROW) return true
+  return row.width >= containerWidth && row.items.length >= MIN_PER_ROW
+}
+
+function rowsFilled(rows, containerWidth) {
+  return containerWidth > 0 && rows.every((r) => rowIsFull(r, containerWidth))
+}
+
+function placeInShortestRow(img, rows, rowHeightPx, containerWidth) {
+  // Real aspect ratio, not clamped — has to match what <img className="h-full
+  // w-auto" /> will actually render, or the fill math drifts from reality.
+  const pixelWidth = rowHeightPx / img.aspect
+  const openRows = rows.filter((r) => !rowIsFull(r, containerWidth))
+  if (openRows.length === 0) return
+  const shortest = openRows.reduce((a, b) => (b.width < a.width ? b : a))
+  shortest.items.push(img)
+  shortest.width += pixelWidth + GAP_PX
+}
+
 export default function Home() {
   const shuffledCandidates = useMemo(() => shuffle(featuredCandidates), [])
-  const [displayedImages, setDisplayedImages] = useState([])
+  const [mobileRows, setMobileRows] = useState([])
+  const [desktopRows, setDesktopRows] = useState([])
   const [loadingFeatured, setLoadingFeatured] = useState(true)
+  const [containerWidth, setContainerWidth] = useState(0)
   const [activeGroup, setActiveGroup] = useState(null)
   const [activePosition, setActivePosition] = useState(0)
   const scrollRef = useRef(null)
@@ -74,46 +91,65 @@ export default function Home() {
     []
   )
 
+  // Measure the actual rendered width of the row container so we know
+  // exactly how much content is needed to fill it — this varies by
+  // screen size/zoom, so a fixed number can't get it right everywhere.
   useEffect(() => {
+    const el = scrollRef.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver((entries) => {
+      setContainerWidth(entries[0].contentRect.width)
+    })
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
+  useEffect(() => {
+    if (containerWidth === 0) return
     let cancelled = false
 
-    async function loadAndSelect() {
-      const selected = []
-      let runningWeight = 0
+    async function loadAndFill() {
+      const mobile = makeRowTrackers(2)
+      const desktop = makeRowTrackers(3)
 
       for (
         let start = 0;
-        start < shuffledCandidates.length && runningWeight < TARGET_WEIGHT;
+        start < shuffledCandidates.length && start < MAX_CANDIDATES;
         start += MEASURE_BATCH_SIZE
       ) {
+        if (rowsFilled(mobile, containerWidth) && rowsFilled(desktop, containerWidth)) {
+          break
+        }
+
         const batch = shuffledCandidates.slice(start, start + MEASURE_BATCH_SIZE)
         const measured = await Promise.all(batch.map(measureImage))
         if (cancelled) return
 
         for (const img of measured) {
-          if (runningWeight >= TARGET_WEIGHT) break
-          selected.push(img)
-          runningWeight += img.weight
+          const mobileNeedsMore = !rowsFilled(mobile, containerWidth)
+          const desktopNeedsMore = !rowsFilled(desktop, containerWidth)
+          if (!mobileNeedsMore && !desktopNeedsMore) break
+
+          if (mobileNeedsMore) placeInShortestRow(img, mobile, ROW_HEIGHT_PX.mobile, containerWidth)
+          if (desktopNeedsMore) placeInShortestRow(img, desktop, ROW_HEIGHT_PX.desktop, containerWidth)
         }
       }
 
       if (!cancelled) {
-        setDisplayedImages(selected)
+        setMobileRows(mobile.map((r) => r.items))
+        setDesktopRows(desktop.map((r) => r.items))
         setLoadingFeatured(false)
       }
     }
 
     if (shuffledCandidates.length > 0) {
-      loadAndSelect()
+      loadAndFill()
     }
 
     return () => {
       cancelled = true
     }
-  }, [shuffledCandidates])
-
-  const mobileRows = useMemo(() => packRows(displayedImages, 2), [displayedImages])
-  const desktopRows = useMemo(() => packRows(displayedImages, 3), [displayedImages])
+  }, [shuffledCandidates, containerWidth])
 
   function handleFeaturedScroll() {
     const el = scrollRef.current
@@ -127,7 +163,7 @@ export default function Home() {
 
   useEffect(() => {
     handleFeaturedScroll()
-  }, [displayedImages])
+  }, [mobileRows, desktopRows])
 
   function openItem(item) {
     setActiveGroup(item.group)
@@ -221,7 +257,7 @@ export default function Home() {
   return (
     <main>
       <Container>
-        <div className="pt-24 md:pt-20 pb-16">
+        <div className="pt-16 md:pt-32 pb-16">
           <h1 className="sr-only">San Ysidro Archive</h1>
 
           <h2 className="font-mono text-xl text-ink mb-2 text-left">

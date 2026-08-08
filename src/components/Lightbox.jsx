@@ -68,7 +68,7 @@ export default function Lightbox({ images, activeIndex, onClose, onNavigate, gro
           <div className="w-full md:w-72 py-6 px-6 border-t md:border-t-0 md:border-l border-rule overflow-y-auto flex flex-col justify-center text-center min-h-[200px]">
             <p className="font-mono text-sm text-ink uppercase tracking-widest">
               {groupTitle
-                ? `Part of photo series documenting ${groupTitle}`
+                ? `${groupTitle}`
                 : image.caption}
             </p>
 

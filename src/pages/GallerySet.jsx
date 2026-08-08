@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { useParams, useSearchParams, Link } from 'react-router-dom'
 import Container from '../components/Container.jsx'
 import Lightbox from '../components/Lightbox.jsx'
+import ExternalVideo from '../components/ExternalVideo.jsx'
+import ExternalDocument from '../components/ExternalDocument.jsx'
 import { flatImages } from '../data/gallery/loadGallery.js'
 import groupMeta from '../data/gallery/groups.js'
 
@@ -11,6 +13,9 @@ export default function GallerySet() {
   const meta = groupMeta[slug]
   const title = typeof meta === 'string' ? meta : meta?.title
   const description = typeof meta === 'object' ? meta?.description : null
+  const video = typeof meta === 'object' ? meta?.video : null
+  const document_ = typeof meta === 'object' ? meta?.document : null
+
   const [activeIndex, setActiveIndex] = useState(-1)
   const [searchParams] = useSearchParams()
 
@@ -36,7 +41,7 @@ export default function GallerySet() {
     setActiveIndex((prev) => (prev + direction + total) % total)
   }
 
-  if (photos.length === 0) {
+  if (photos.length === 0 && !video && !document_) {
     return (
       <main>
         <Container>
@@ -64,7 +69,6 @@ export default function GallerySet() {
           >
             ← Back to Library
           </Link>
-          
           <h1 className={`font-mono text-2xl text-ink mt-4 text-center ${description ? 'mb-2' : 'mb-10'}`}>
             {title}
           </h1>
@@ -74,21 +78,35 @@ export default function GallerySet() {
             </p>
           )}
 
-          <div className="columns-2 md:columns-3 gap-4">
-            {photos.map((photo, index) => (
-              <button
-                key={photo.id}
-                onClick={() => openPhoto(index)}
-                className="block w-full mb-4 break-inside-avoid text-left"
-              >
-                <img
-                  src={photo.src}
-                  alt={photo.caption}
-                  className="w-full rounded-sm"
-                />
-              </button>
-            ))}
-          </div>
+          {video && (
+            <div className="max-w-2xl mx-auto mb-10">
+              <ExternalVideo src={video} title={title} />
+            </div>
+          )}
+
+          {document_ && (
+            <div className="max-w-2xl mx-auto mb-10">
+              <ExternalDocument src={document_} title={title} />
+            </div>
+          )}
+
+          {photos.length > 0 && (
+            <div className="columns-2 md:columns-3 gap-4">
+              {photos.map((photo, index) => (
+                <button
+                  key={photo.id}
+                  onClick={() => openPhoto(index)}
+                  className="block w-full mb-4 break-inside-avoid text-left"
+                >
+                  <img
+                    src={photo.src}
+                    alt={photo.caption}
+                    className="w-full rounded-sm"
+                  />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </Container>
 

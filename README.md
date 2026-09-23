@@ -1,8 +1,8 @@
 # San Ysidro Archive
 
-website is wip. 
+website is published, but being edited and improvised as we go. 
 
 ## Getting started
 
-everything is organize by folder 
+everything is organized by folder 
 

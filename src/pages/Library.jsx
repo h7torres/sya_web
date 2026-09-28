@@ -25,11 +25,17 @@ function getSiblings(groupKey) {
 
 const PAGE_SIZE = 24
 
-// Only used to pick which column a photo goes in, so one extreme photo
-// can't wildly unbalance a column — the photo itself still renders at
-// its true, unclamped aspect ratio (see loadAspect below), never cropped.
-const PACK_WEIGHT_MIN = 0.5
-const PACK_WEIGHT_MAX = 3
+// Used to pick which column a photo goes in. Loosened from the original
+// [0.5, 3] range: a tighter clamp made the packing heuristic underestimate
+// how tall very portrait-oriented photos (tall scanned documents, etc.)
+// actually render, which let columns drift apart in height by the time a
+// full page of images had loaded — this wider range tracks real height
+// much more closely while still keeping one extreme outlier from
+// wrecking a column's balance entirely. The photo itself always renders
+// at its true, unclamped aspect ratio — this only affects which column
+// it's placed into.
+const PACK_WEIGHT_MIN = 0.3
+const PACK_WEIGHT_MAX = 6
 
 function loadAspect(src) {
   return new Promise((resolve) => {
@@ -54,20 +60,28 @@ function FadeImage({ src, alt, className }) {
   }, [])
 
   return (
-    <FadeImage
-      src = {item.src}
-      alt = {item.caption}
-      className = "w-full h-full object-cover block"
+    <img
+      ref={imgRef}
+      src={src}
+      alt={alt}
+      loading="lazy"
+      onLoad={() => setLoaded(true)}
+      className={`${className} transition-opacity duration-700 ease-out ${
+        loaded ? 'opacity-100' : 'opacity-0'
+      }`}
     />
   )
 }
 
-// Pinterest-style: each photo keeps its real proportions (no cropping to
-// a uniform box), items are placed one at a time as their own aspect
-// ratio resolves rather than waiting on the whole batch (so the grid
-// fills in progressively instead of popping in all at once), and once a
-// photo is placed in a column it's never moved — so "Load more" only
-// ever appends after what's already there.
+// Pinterest/Cosmos-style: each photo keeps its real proportions (no
+// cropping to a uniform box), items are placed one at a time as their
+// own aspect ratio resolves rather than waiting on the whole batch (so
+// the grid fills in progressively instead of popping in all at once),
+// and once a photo is placed in a column it's never moved — so "Load
+// more" only ever appends after what's already there. Columns ending at
+// slightly different heights is normal and expected (this is exactly
+// how Cosmos and Pinterest behave mid-scroll) — the goal is keeping that
+// difference small, not eliminating it.
 function MasonryColumns({ items, numCols, onItemClick, className }) {
   const columnsRef = useRef(
     Array.from({ length: numCols }, () => ({ items: [], weight: 0 }))
@@ -113,10 +127,9 @@ function MasonryColumns({ items, numCols, onItemClick, className }) {
               className="relative block w-full group overflow-hidden rounded-sm bg-ink/5 text-left"
               style={{ aspectRatio: `1 / ${item.aspect}` }}
             >
-              <img
+              <FadeImage
                 src={item.src}
                 alt={item.caption}
-                loading="lazy"
                 className="w-full h-full object-cover block"
               />
               <div className="absolute inset-0 bg-ink/0 group-hover:bg-ink/60 transition-colors duration-200 flex items-center justify-center">
@@ -244,6 +257,31 @@ export default function Library() {
     const total = siblings.length
     setActivePosition((prev) => (prev + direction + total) % total)
   }
+
+  // Auto-loads the next page a bit before the user actually scrolls to
+  // the bottom (rootMargin gives it a head start), so columns rarely sit
+  // at a visibly uneven resting point — by the time it would come into
+  // view, more photos have usually already streamed in past it. This is
+  // what makes Cosmos/Pinterest-style masonry look tidy in practice: not
+  // a smarter packing algorithm, just never pausing on the ragged edge.
+  const loadMoreRef = useRef(null)
+
+  useEffect(() => {
+    if (!hasMore) return
+    const el = loadMoreRef.current
+    if (!el) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisibleCount((prev) => prev + PAGE_SIZE)
+        }
+      },
+      { rootMargin: '1000px 0px' }
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [hasMore])
 
   function toggleTag(tag) {
     setSelectedTags((prev) =>
@@ -392,7 +430,7 @@ export default function Library() {
           </div>
 
           {hasMore && (
-            <div className="text-center pb-16">
+            <div ref={loadMoreRef} className="text-center pb-16">
               <button
                 onClick={() => setVisibleCount((prev) => prev + PAGE_SIZE)}
                 className="font-mono text-xs uppercase tracking-widest border border-ink px-6 py-3 hover:bg-ink hover:text-paper transition-colors"

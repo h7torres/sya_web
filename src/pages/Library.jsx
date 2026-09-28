@@ -54,15 +54,10 @@ function FadeImage({ src, alt, className }) {
   }, [])
 
   return (
-    <img
-      ref={imgRef}
-      src={src}
-      alt={alt}
-      loading="lazy"
-      onLoad={() => setLoaded(true)}
-      className={`${className} transition-opacity duration-700 ease-out ${
-        loaded ? 'opacity-100' : 'opacity-0'
-      }`}
+    <FadeImage
+      src = {item.src}
+      alt = {item.caption}
+      className = "w-full h-full object-cover block"
     />
   )
 }

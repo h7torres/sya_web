@@ -40,6 +40,33 @@ function loadAspect(src) {
   })
 }
 
+// Fades an image in once it's actually painted in the DOM, rather than
+// letting it pop in the instant the browser finishes decoding it. If the
+// image is already cached (e.g. loadAspect above already fetched it),
+// naturalWidth is set immediately on mount, so we check that up front
+// instead of waiting on an onLoad that may never fire again.
+function FadeImage({ src, alt, className }) {
+  const imgRef = useRef(null)
+  const [loaded, setLoaded] = useState(false)
+
+  useEffect(() => {
+    if (imgRef.current?.complete) setLoaded(true)
+  }, [])
+
+  return (
+    <img
+      ref={imgRef}
+      src={src}
+      alt={alt}
+      loading="lazy"
+      onLoad={() => setLoaded(true)}
+      className={`${className} transition-opacity duration-700 ease-out ${
+        loaded ? 'opacity-100' : 'opacity-0'
+      }`}
+    />
+  )
+}
+
 // Pinterest-style: each photo keeps its real proportions (no cropping to
 // a uniform box), items are placed one at a time as their own aspect
 // ratio resolves rather than waiting on the whole batch (so the grid

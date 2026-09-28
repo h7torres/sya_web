@@ -73,48 +73,76 @@ function FadeImage({ src, alt, className }) {
   )
 }
 
+// Generic placeholder shapes shown for photos whose aspect ratio hasn't
+// resolved yet — same idea as Home.jsx's renderSkeletonRows, just applied
+// to columns instead of rows. These don't need to match the photo's real
+// proportions; they just need to occupy roughly photo-shaped space so the
+// grid's overall shape is visible immediately instead of empty.
+const SKELETON_ASPECTS = [1.3, 0.8, 1.5, 1, 1.1, 0.9]
+
 // Pinterest/Cosmos-style: each photo keeps its real proportions (no
-// cropping to a uniform box), items are placed one at a time as their
-// own aspect ratio resolves rather than waiting on the whole batch (so
-// the grid fills in progressively instead of popping in all at once),
-// and once a photo is placed in a column it's never moved — so "Load
-// more" only ever appends after what's already there. Columns ending at
-// slightly different heights is normal and expected (this is exactly
-// how Cosmos and Pinterest behave mid-scroll) — the goal is keeping that
-// difference small, not eliminating it.
+// cropping to a uniform box), and once a photo is placed in a column it's
+// never moved — so "Load more" only ever appends after what's already
+// there. Columns ending at slightly different heights is normal and
+// expected (this is exactly how Cosmos and Pinterest behave mid-scroll) —
+// the goal is keeping that difference small, not eliminating it.
+//
+// Unlike the first version of this component, a batch of new items is no
+// longer placed into the grid one at a time as each image happens to
+// finish loading — that's what caused photos to visibly pop in at random
+// moments. Instead, a pulsing placeholder claims each photo's spot in the
+// grid immediately, and the whole batch swaps from placeholders to real,
+// already-loaded photos together once every image in it has resolved —
+// the same "shape appears immediately, content arrives all at once"
+// pattern Home.jsx uses for its featured strip.
 function MasonryColumns({ items, numCols, onItemClick, className }) {
   const columnsRef = useRef(
     Array.from({ length: numCols }, () => ({ items: [], weight: 0 }))
   )
   const processedRef = useRef(new Set())
+  const pendingRef = useRef(new Set())
   const [, forceRender] = useState(0)
 
   useEffect(() => {
-    const newItems = items.filter((item) => !processedRef.current.has(item.id))
+    const newItems = items.filter(
+      (item) => !processedRef.current.has(item.id) && !pendingRef.current.has(item.id)
+    )
     if (newItems.length === 0) return
     let cancelled = false
 
-    newItems.forEach((item) => {
-      loadAspect(item.src).then((aspect) => {
-        if (cancelled || processedRef.current.has(item.id)) return
+    newItems.forEach((item) => pendingRef.current.add(item.id))
+    forceRender((n) => n + 1) // show placeholders for this batch right away
+
+    Promise.all(
+      newItems.map((item) =>
+        loadAspect(item.src).then((aspect) => ({ ...item, aspect }))
+      )
+    ).then((resolvedItems) => {
+      if (cancelled) return
+      resolvedItems.forEach((item) => {
+        pendingRef.current.delete(item.id)
         processedRef.current.add(item.id)
         const packWeight = Math.min(
-          Math.max(aspect, PACK_WEIGHT_MIN),
+          Math.max(item.aspect, PACK_WEIGHT_MIN),
           PACK_WEIGHT_MAX
         )
         const shortest = columnsRef.current.reduce((a, b) =>
           b.weight < a.weight ? b : a
         )
-        shortest.items.push({ ...item, aspect })
+        shortest.items.push(item)
         shortest.weight += packWeight
-        forceRender((n) => n + 1)
       })
+      forceRender((n) => n + 1) // whole batch appears together
     })
 
     return () => {
       cancelled = true
     }
   }, [items])
+
+  const pendingItems = items.filter((item) => pendingRef.current.has(item.id))
+  const skeletonCols = Array.from({ length: numCols }, () => [])
+  pendingItems.forEach((item, i) => skeletonCols[i % numCols].push(item))
 
   return (
     <div className={className}>
@@ -138,6 +166,15 @@ function MasonryColumns({ items, numCols, onItemClick, className }) {
                 </p>
               </div>
             </button>
+          ))}
+          {skeletonCols[i].map((item, j) => (
+            <div
+              key={item.id}
+              className="w-full bg-ink/10 animate-pulse rounded-sm"
+              style={{
+                aspectRatio: `1 / ${SKELETON_ASPECTS[(i + j) % SKELETON_ASPECTS.length]}`,
+              }}
+            />
           ))}
         </div>
       ))}
